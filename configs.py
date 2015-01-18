@@ -39,6 +39,10 @@ class Global(object):
     
     __metaclass__ = Singleton
 
+    ###################
+    # BEGIN CONFIGS
+    ###################
+
     GLUT_DISPLAY = False
 
     WIDTH = 600
@@ -56,6 +60,9 @@ class Global(object):
 
     VERTEX_SHADER_LOC = 'vertex.glsl'
     FRAGMENT_SHADER_LOC = 'fragment.glsl'
+
+    CLEAR_COLOR = (.4, .4, .4, 1.)
+    WIREFRAME_COLOR = (0,0,0,1)
 
     def __init__(self):
         # read shader locations
