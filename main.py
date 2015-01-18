@@ -11,6 +11,7 @@ from OpenGL.arrays import vbo
 from configs import Global
 from bufferHelper import BufferHelper
 from transforms import Transform
+from objects import Box
 
 # use and edit configs.Global class for configs
 GLOBAL = Global()
@@ -26,6 +27,7 @@ class Display(object):
         glut.glutReshapeFunc(self.reshape)
         glut.glutDisplayFunc(self.display)
         glut.glutKeyboardFunc(self.keyboard)
+        glut.glutTimerFunc(10, self.on_timer, 10)
 
         self.build()
 
@@ -33,12 +35,20 @@ class Display(object):
 
         self.prep_matrices()
 
+        self.render_obj = Box(self.program)
+
+    @classmethod
+    def on_timer(cls, t):
+        glut.glutTimerFunc(t, cls.on_timer, t)
+        glut.glutPostRedisplay()
+
     def display(self):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glEnable(gl.GL_DEPTH_TEST)
 
-        gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 4)
+        self.render_obj.draw()
 
+        gl.glFlush()
         glut.glutSwapBuffers()
 
     def reshape(self, width, height):
@@ -77,23 +87,13 @@ class Display(object):
         gl.glUseProgram(program)
 
     def prep_matrices(self):
-        position = np.zeros(4, [('position', np.float32, 3)])
-        position['position'] = [ (-1,-1,0),   (-1,+1,0),   (+1,-1,0),   (+1,+1,0)   ]
-        posBuffer = BufferHelper.sendToGPU('position', position, gl.GL_DYNAMIC_DRAW)
-        BufferHelper.sendToShaders(self.program, 'position')
-
-        color = np.zeros(4, [('color', np.float32, 4)])
-        color['color'] = [(1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1)]
-        colorBuffer = BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)
-        BufferHelper.sendToShaders(self.program, 'color', 'colorx')
-
         # setup view matrix
         view_mat = np.array(Transform.lookat(GLOBAL.EYE, GLOBAL.LOOKAT, GLOBAL.UP))
         BufferHelper.sendUniformToShaders(self.program, 'view', view_mat, 'm4')
 
         # setup model matrix
         model_mat = np.matrix(np.identity(4, dtype=np.float32))
-        model_mat *= Transform.translate(0,0,-10)
+        model_mat *= Transform.translate(0,0,-15)
         BufferHelper.sendUniformToShaders(self.program, 'model', model_mat, 'm4')
 
     def run(self):

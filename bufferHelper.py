@@ -17,6 +17,11 @@ class BufferHelper(object):
     """Keeps track of and provides useful functions for buffers and bufferIds on GPU"""
 
     buffers = {}
+
+    @classmethod
+    def bindBuffer(cls, name):
+        buffer = cls.buffers[name]['bufferId']
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buffer)
     
     @classmethod
     def sendToGPU(cls, name, data, form):
@@ -53,7 +58,7 @@ class BufferHelper(object):
         gl.glEnableVertexAttribArray(loc)
 
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buffer)
-        gl.glVertexAttribPointer(loc, data.shape[0], gl.GL_FLOAT, False, stride, offset)
+        gl.glVertexAttribPointer(loc, data[0][0].size, gl.GL_FLOAT, False, stride, offset)
 
     @classmethod
     def sendUniformToShaders(cls, program, name, data, function_type):

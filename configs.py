@@ -17,8 +17,8 @@ class Global(object):
     ZNEAR = 1
     ZFAR = 2000.
 
-    EYE = (0,0,1)
-    LOOKAT = (0,0,-1.)
+    EYE = (10,10,1)
+    LOOKAT = (0,0,-15.)
     UP = (0.,1.,0.)
 
     VERTEX_SHADER_CODE = """
@@ -40,6 +40,7 @@ class Global(object):
     varying vec4 v_color;
     void main()
     {
+        //gl_FragColor = vec4(1.0,1.0,1.0,1.0);
         gl_FragColor = v_color;
     }
     """
