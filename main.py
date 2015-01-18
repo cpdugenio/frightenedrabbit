@@ -45,6 +45,8 @@ class GLUTDisplay(object):
         glut.glutReshapeFunc(self.reshape)
         glut.glutDisplayFunc(self.display)
         glut.glutKeyboardFunc(self.keyboard)
+        glut.glutMouseFunc(self.glutMousePressEvent)
+        glut.glutMotionFunc(self.glutMouseMoveEvent)
         glut.glutTimerFunc(GLOBAL.REFRESH_TIMER, self.onTimer, GLOBAL.REFRESH_TIMER)
 
         self.buildProgram()
@@ -55,6 +57,15 @@ class GLUTDisplay(object):
 
         # set object to be rendered
         self.render_obj = Box(self.program)
+
+    def glutMouseMoveEvent(self, x, y):
+        self.rotationMatrix *= Transform.yrotate((self.xorigpos - x) * -0.01)
+        self.rotationMatrix *= Transform.xrotate((self.yorigpos - y) * -0.01)
+
+        self.xorigpos, self.yorigpos = x, y
+
+    def glutMousePressEvent(self, button, state, x, y):
+        self.xorigpos, self.yorigpos = x, y
 
     def getProgram(self):
         """
@@ -93,6 +104,7 @@ class GLUTDisplay(object):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glEnable(gl.GL_DEPTH_TEST)
 
+        self.prepTransformation()
         self.render_obj.draw()
 
         gl.glFlush()
@@ -156,6 +168,17 @@ class GLUTDisplay(object):
         # Make program the default program
         gl.glUseProgram(program)
 
+        # setup for mouseclick
+        self.xrotate = 0
+        self.yrotate = 0
+        self.zrotate = 0 #not being used
+        self.xorigpos = 0
+        self.yorigpos = 0
+
+        self.scale = 1.0
+
+        self.rotationMatrix = np.matrix(np.identity(4, dtype=np.float32))
+
     def prepTransformation(self):
         """
         Setup of the view and model matrices are done
@@ -168,11 +191,13 @@ class GLUTDisplay(object):
         model_mat = np.matrix(np.identity(4, dtype=np.float32))
         # note that because GLSL uses row major, need to do SRT (instead of TRS)
 
-        # rotations
-        model_mat *= Transform.xrotate(self.xrotate)
-        model_mat *= Transform.yrotate(self.yrotate)
-        model_mat *= Transform.zrotate(self.zrotate)
+        # scale
+        model_mat *= Transform.scale(self.scale, self.scale, self.scale)
 
+        # rotations
+        model_mat *= self.rotationMatrix
+
+        # transform
         model_mat *= Transform.translate(0,0,-15)
         BufferHelper.sendUniformToShaders(self.getProgram(), 'model', model_mat, 'm4')
 
@@ -182,6 +207,8 @@ class GLUTDisplay(object):
         """
         glut.glutMainLoop()
 
+    def changeScale(self, value):
+        self.scale = value * 0.1
 
 class QTDisplay(QGLWidget, GLUTDisplay):
     """
@@ -198,16 +225,17 @@ class QTDisplay(QGLWidget, GLUTDisplay):
         format.setSampleBuffers(True)
         self.setFormat(format)
 
-        self.xrotate = 0
-        self.yrotate = 0
-        self.zrotate = 0
+    def mouseMoveEvent(self, event):
+        self.glutMouseMoveEvent(event.pos().x(), event.pos().y())
+
+    def mousePressEvent(self, event):
+        self.glutMousePressEvent(None, None, event.pos().x(), event.pos().y())
 
     def paintGL(self):
         """
         `paintGL` is called when drawing to the widget is necessary.
         Simply redirecting to `self.display`, the `GLUTDisplay` function for drawing.
         """
-        self.prepTransformation()
         self.display()
         self.swapBuffers()
 
@@ -223,7 +251,7 @@ class QTDisplay(QGLWidget, GLUTDisplay):
         
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.paintGL)
-        self.timer.start(1)
+        self.timer.start(GLOBAL.REFRESH_TIMER)
         
     def resizeGL(self, width, height):
         """
@@ -232,38 +260,35 @@ class QTDisplay(QGLWidget, GLUTDisplay):
         """
         self.reshape(width, height)
 
-    def closeEvent(self, event):
-        event.accept()
 
 class QTMainWindow(QtGui.QWidget):
+    """
+    Wrapper widget class (has a grid to house other widgets)
+    """
     def __init__(self):
         super(QTMainWindow, self).__init__()
 
-        self.resize(1000, 1000)
+        self.GLWidget = QTDisplay()
+
+        # scale slider
+        self.scaleSlider = QtGui.QSlider(Qt.Horizontal, self)
+        self.scaleSlider.setRange(1,100)
+        self.scaleSlider.setSliderPosition(10)
+        self.scaleSlider.valueChanged[int].connect(self.GLWidget.changeScale)
 
         self.initUI()
 
     def initUI(self):
-        title = QtGui.QLabel('Title')
-        author = QtGui.QLabel('Author')
-        review = QtGui.QLabel('Review')
-
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
 
-        grid.addWidget(title, 1, 5)
-
-        grid.addWidget(author, 2, 5)
-
-        grid.addWidget(review, 3, 5)
-
-        grid.addWidget(QTDisplay(), 1, 0, 3, 4)
+        grid.addWidget(self.GLWidget, 1, 1, 5, 5)
+        grid.addWidget(self.scaleSlider, 6, 1, 1, 5)
         
         self.setLayout(grid) 
         
         self.setGeometry(100,100,700,700)
 
-        self.show()
 
 if __name__ == '__main__':
     
