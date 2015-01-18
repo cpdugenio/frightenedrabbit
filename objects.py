@@ -29,7 +29,7 @@ class Object(object):
 
 class Box(Object):
     """
-    This is the basic box class
+    This is the basic box class to be rendered
     """
 
     def __init__(self, *args):
@@ -82,6 +82,9 @@ class Box(Object):
         self.ind_buffer.bind()
 
     def draw(self):
+        """
+        Basic draw function which sends elements to the shaders.
+        """
         for i in range(6): # draw each side
             gl.glDrawElements(gl.GL_TRIANGLE_FAN, 4, gl.GL_UNSIGNED_INT, self.ind_buffer+4*4*i)
 

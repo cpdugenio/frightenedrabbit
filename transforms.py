@@ -7,6 +7,12 @@ from numpy.linalg import norm, inv
 class Transform(object):
     @staticmethod
     def translate(x, y, z):
+        """
+        Returns
+        -------
+        numpy.matrix
+            4x4 translate matrix which is okay to be multiplied and sent directly to shader.
+        """
         T = np.identity(4, dtype=np.float32)
         T[0:3,3] = [x,y,z]
 
@@ -14,6 +20,12 @@ class Transform(object):
 
     @staticmethod
     def scale(x, y, z):
+        """
+        Returns
+        -------
+        numpy.matrix
+            4x4 scale matrix which is okay to be multiplied and sent directly to shader.
+        """
         T = np.identity(4, dtype=np.float32)
         T[0,0] = x
         T[1,1] = y
@@ -60,7 +72,29 @@ class Transform(object):
 
     @staticmethod
     def frustum(right, left, top, bottom, near, far):
+        """
+        http://www.songho.ca/opengl/gl_projectionmatrix.html
+
+        Parameters
+        ----------
+        right : float
+        left : float
+        top : float
+        bottom : float
+        near : float
+        far : float
+
         
+        Returns
+        -------
+        numpy.mat
+            Numpy 4x4 frustum matrix
+
+
+        Notes
+        -----
+        This function does not validate values (i.e. if near < far)
+        """
         frust = np.zeros((4,4), dtype=np.float32)
         frust[0,0] = 2. * near / (right - left)
         frust[0,2] = (right + left) / (right - left)
@@ -89,7 +123,7 @@ class Transform(object):
         Returns
         -------
         numpy.mat
-            Numpy 4x4 matrix
+            Numpy 4x4 perspective matrix
         """
         top = np.tan(fovy * np.pi / 360.0) * near
         right = aspect * top

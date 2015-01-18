@@ -20,11 +20,33 @@ class BufferHelper(object):
 
     @classmethod
     def bindBuffer(cls, name):
+        """
+        Binds buffer by name
+
+        Parameters
+        ----------
+        name : str
+        """
         buffer = cls.buffers[name]['bufferId']
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buffer)
     
     @classmethod
     def sendToGPU(cls, name, data, form):
+        """
+        Sends data to GPU.
+
+        Parameters
+        ----------
+        name : str
+        data : numpy.array
+        form : gl.GLenum
+            GL_STREAM_DRAW, GL_STREAM_READ, GL_STREAM_COPY, GL_STATIC_DRAW, GL_STATIC_READ,
+            GL_STATIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, or GL_DYNAMIC_COPY
+        
+        Notes
+        -----
+        `name` is used to save buffer in `self.buffers`
+        """
         # ask for an empty buffer slot from GPU
         buffer = gl.glGenBuffers(1)
 
@@ -32,7 +54,7 @@ class BufferHelper(object):
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buffer)
 
         # upload data to this buffer
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, data.nbytes, data, gl.GL_DYNAMIC_DRAW)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, data.nbytes, data, form)
 
         # save buffer information
         cls.buffers[name] = {'bufferId': buffer, 'data': data}
@@ -42,6 +64,19 @@ class BufferHelper(object):
 
     @classmethod
     def sendToShaders(cls, program, name, shader_vname = None):
+        """
+        Pulls shader parameter `shader_vname` location and linked with GPU buffer at `name`
+
+        Parameters
+        ----------
+        program : gl.GLuint
+        name : str
+        shader_vname : str
+
+        Notes
+        -----
+        If `shader_vname` is not entered, will use `name` as shader parameter var name
+        """
         if not shader_vname:
             shader_vname = name
 
@@ -62,6 +97,19 @@ class BufferHelper(object):
 
     @classmethod
     def sendUniformToShaders(cls, program, name, data, function_type):
+        """
+        Send uniform information to the shaders (no GPU buffer upload necessary)
+
+        Parameters
+        ----------
+        program : gl.GLuint
+        name : str
+            shader uniform var name
+        data : int or list or numpy.array
+            need to make sure coincides with function_type
+        function_type : str
+            see switch for available uniform types
+        """
         switch = {
             '1f': gl.glUniform1f,
             '2f': gl.glUniform2f,
