@@ -50,7 +50,7 @@ class Global(object):
     ZNEAR = 1
     ZFAR = 2000.
 
-    EYE = (10,10,1)
+    EYE = (0,0,0)
     LOOKAT = (0,0,-15.)
     UP = (0.,1.,0.)
 

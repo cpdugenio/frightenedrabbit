@@ -13,6 +13,7 @@ from bufferHelper import BufferHelper
 from transforms import Transform
 from objects import Box
 
+from PyQt4.QtCore import Qt, QTimer
 from PyQt4 import QtGui
 from PyQt4.QtOpenGL import QGLWidget, QGLFormat
 
@@ -165,6 +166,13 @@ class GLUTDisplay(object):
 
         # setup model matrix
         model_mat = np.matrix(np.identity(4, dtype=np.float32))
+        # note that because GLSL uses row major, need to do SRT (instead of TRS)
+
+        # rotations
+        model_mat *= Transform.xrotate(self.xrotate)
+        model_mat *= Transform.yrotate(self.yrotate)
+        model_mat *= Transform.zrotate(self.zrotate)
+
         model_mat *= Transform.translate(0,0,-15)
         BufferHelper.sendUniformToShaders(self.getProgram(), 'model', model_mat, 'm4')
 
@@ -189,13 +197,19 @@ class QTDisplay(QGLWidget, GLUTDisplay):
         format = self.format()
         format.setSampleBuffers(True)
         self.setFormat(format)
-        
+
+        self.xrotate = 0
+        self.yrotate = 0
+        self.zrotate = 0
+
     def paintGL(self):
         """
         `paintGL` is called when drawing to the widget is necessary.
         Simply redirecting to `self.display`, the `GLUTDisplay` function for drawing.
         """
+        self.prepTransformation()
         self.display()
+        self.swapBuffers()
 
     def initializeGL(self):
         """
@@ -207,6 +221,10 @@ class QTDisplay(QGLWidget, GLUTDisplay):
 
         self.render_obj = Box(self.getProgram())        
         
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.paintGL)
+        self.timer.start(1)
+        
     def resizeGL(self, width, height):
         """
         `resizeGL` is caled when widget is resized.
@@ -214,14 +232,48 @@ class QTDisplay(QGLWidget, GLUTDisplay):
         """
         self.reshape(width, height)
 
+    def closeEvent(self, event):
+        event.accept()
+
+class QTMainWindow(QtGui.QWidget):
+    def __init__(self):
+        super(QTMainWindow, self).__init__()
+
+        self.resize(1000, 1000)
+
+        self.initUI()
+
+    def initUI(self):
+        title = QtGui.QLabel('Title')
+        author = QtGui.QLabel('Author')
+        review = QtGui.QLabel('Review')
+
+        grid = QtGui.QGridLayout()
+        grid.setSpacing(10)
+
+        grid.addWidget(title, 1, 5)
+
+        grid.addWidget(author, 2, 5)
+
+        grid.addWidget(review, 3, 5)
+
+        grid.addWidget(QTDisplay(), 1, 0, 3, 4)
+        
+        self.setLayout(grid) 
+        
+        self.setGeometry(100,100,700,700)
+
+        self.show()
+
 if __name__ == '__main__':
     
     if not GLOBAL.GLUT_DISPLAY:
         app = QtGui.QApplication(sys.argv)
-        widget = QTDisplay()
-        widget.resize(GLOBAL.WIDTH, GLOBAL.HEIGHT)
-        widget.setWindowTitle("Frightened Qt Rabbit")
-        widget.show()
+
+        mainwindow = QTMainWindow()
+        mainwindow.setWindowTitle("Frightened Qt Rabbit")
+        mainwindow.show()
+        
         app.exec_()
     else:
         GLUTdisplay = GLUTDisplay()

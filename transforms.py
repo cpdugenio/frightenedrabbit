@@ -5,6 +5,37 @@ import numpy as np
 from numpy.linalg import norm, inv
 
 class Transform(object):
+    """http://inside.mines.edu/fs_home/gmurray/Arbit"""
+    @staticmethod
+    def xrotate(angle):
+        T = np.identity(4, dtype=np.float32)
+        T[1,1] = np.cos(angle)
+        T[1,2] = -np.sin(angle)
+        T[2,1] = np.sin(angle)
+        T[2,2] = np.cos(angle)
+
+        return np.matrix(T.T)
+
+    @staticmethod
+    def yrotate(angle):
+        T = np.identity(4, dtype=np.float32)
+        T[0,0] = np.cos(angle)
+        T[0,2] = np.sin(angle)
+        T[2,0] = -np.sin(angle)
+        T[2,2] = np.cos(angle)
+
+        return np.matrix(T.T)
+
+    @staticmethod
+    def zrotate(angle):
+        T = np.identity(4, dtype=np.float32)
+        T[0,0] = np.cos(angle)
+        T[0,1] = -np.sin(angle)
+        T[1,0] = np.sin(angle)
+        T[1,1] = np.cos(angle)
+
+        return np.matrix(T.T)
+    
     @staticmethod
     def translate(x, y, z):
         """
