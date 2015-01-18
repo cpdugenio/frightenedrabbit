@@ -13,6 +13,9 @@ from bufferHelper import BufferHelper
 from transforms import Transform
 from objects import Box
 
+from PyQt4 import QtGui
+from PyQt4.QtOpenGL import QGLWidget, QGLFormat
+
 # use and edit configs.Global class for configs
 GLOBAL = Global()
 
@@ -99,6 +102,39 @@ class Display(object):
     def run(self):
         glut.glutMainLoop()
 
+class QTDisplay(QGLWidget, Display):
+    def __init__(self, parent = None):
+        super(QTDisplay, self).__init__(parent)
+        format = self.format()
+        format.setSamples(8)
+        format.setSampleBuffers(True)
+        self.setFormat(format)
+        
+    def paintGL(self):
+        self.display()
+        print 'displaying'
+
+    def initializeGL(self):
+        self.build()
+
+        self.prep_matrices()
+
+        self.render_obj = Box(self.program)        
+        
+    def resizeGL(self, width, height):
+        gl.glViewport(0, 0, width, height)
+        projection_mat = Transform.perspective(GLOBAL.FOVY, width/height, GLOBAL.ZNEAR, GLOBAL.ZFAR)
+        BufferHelper.sendUniformToShaders(self.program, 'projection', projection_mat, 'm4')
+
+    def display(self):
+        super(QTDisplay, self).display()
+
 if __name__ == '__main__':
-    display = Display()
-    display.run()
+    app = QtGui.QApplication(["Winfred's PyQt OpenGL"])
+    widget = QTDisplay()
+    widget.resize(GLOBAL.WIDTH, GLOBAL.HEIGHT)
+    widget.show()
+    app.exec_()
+
+    #display = Display()
+    #display.run()

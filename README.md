@@ -14,5 +14,7 @@ brew install pyqt
 
 (It may be wise to install PyQT4 before executing `pip install -r pip_requirements`)
 
+I also had to put `export PYTHONPATH=/usr/local/lib/python2.7/site-packages:$PYTHONPATH` in my `~/.bash_profile` ([reference](https://github.com/Homebrew/homebrew/issues/6176))
+
 
 I am also trying my best to comment methods and classes with [Numpy](https://github.com/numpy/numpydoc)'s doc style (just for good coding commenting practice).
