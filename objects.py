@@ -141,54 +141,49 @@ class Obj(Object):
             vertices_all.append( tuple([float(x) for x in line.split()[1:]]) )
 
         # clean up faces
-        faces_all = [] # index buffer
         faces_v_num = [] # number of vertices to make face
+        faces_ordered = [] # list of indices in order of face-indices
+        
+        # convert each face to list of corresponding vertices
         for line in faces_lines:
             v_num = 0
             for v in [int(x.split('//')[0]) for x in line.split()[1:]]:
-                faces_all.append(v-1)
+                faces_ordered.append(vertices_all[v-1])
                 v_num += 1
             faces_v_num.append(v_num)
-        self.faces_v_num = faces_v_num
 
-        # send vertices to GPU
-        vertices = np.zeros(len(vertices_all), [('vertices', np.float32, 3)])
-        vertices['vertices'] = vertices_all
+        self.faces_v_num = faces_v_num # number of vertices per face
+        acc = self.faces_v_num[::]
+        acc.insert(0,0) # begin at zero index
+        self.faces_v_start = np.cumsum(acc) # start of corresponding face
+        self.faces_len = len(faces_v_num)
+        
+        # send ordered vertices to GPU
+        vertices = np.zeros(len(faces_ordered), [('vertices', np.float32, 3)])
+        vertices['vertices'] = faces_ordered
         verticesBuffer = BufferHelper.sendToGPU('vertices', vertices, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders(self.program, 'vertices', 'position')
 
         # send colors to GPU
-        color = np.zeros(len(vertices_all), [('color', np.float32, 4)])
-        color['color'] = [(random.uniform(0,1),random.uniform(0,1),random.uniform(0,1),1) for x in vertices_all]
+        color = np.zeros(len(faces_ordered), [('color', np.float32, 4)])
+        color['color'] = [(random.uniform(0,1),random.uniform(0,1),random.uniform(0,1),1) for x in faces_ordered]
         colorBuffer = BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)
 
         # send wireframecolors to GPU
-        wireframecolor = np.zeros(len(vertices_all), [('wireframeColor', np.float32, 4)])
-        wireframecolor['wireframeColor'] = [(1,1,1,1) for x in vertices_all]
+        wireframecolor = np.zeros(len(faces_ordered), [('wireframeColor', np.float32, 4)])
+        wireframecolor['wireframeColor'] = [(1,1,1,1) for x in faces_ordered]
         wireframecolorBuffer = BufferHelper.sendToGPU('wireframeColor', wireframecolor, gl.GL_DYNAMIC_DRAW)
 
-        # send indices as VBO
-        indices = np.zeros(len(faces_all), [('indices', np.int32, 1)])
-        indices['indices'] = faces_all
-        self.ind_buffer = vbo.VBO(indices, target=gl.GL_ELEMENT_ARRAY_BUFFER)
-        self.ind_buffer.bind()
-
+        
     def draw(self):
         """
         Basic draw function, sending elements to shaders.
         """
+
         if self.color_on:
             BufferHelper.sendToShaders(self.program, 'color')
-            accum_vertices = 0
-            for n_vertices in self.faces_v_num:
-                gl.glDrawElements(gl.GL_TRIANGLE_FAN, n_vertices, gl.GL_UNSIGNED_INT, self.ind_buffer+4*accum_vertices)
-                accum_vertices += n_vertices
+            gl.glMultiDrawArrays(gl.GL_TRIANGLE_FAN, self.faces_v_start, self.faces_v_num, self.faces_len)
 
         if self.wireframe_on:
             BufferHelper.sendToShaders(self.program, 'wireframeColor', 'color')
-            accum_vertices = 0
-            for n_vertices in self.faces_v_num:
-                gl.glDrawElements(gl.GL_LINE_LOOP, n_vertices, gl.GL_UNSIGNED_INT, self.ind_buffer+4*accum_vertices)
-                accum_vertices += n_vertices
-        
-        
+            gl.glMultiDrawArrays(gl.GL_LINE_LOOP, self.faces_v_start, self.faces_v_num, self.faces_len)

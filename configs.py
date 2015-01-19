@@ -48,7 +48,7 @@ class Global(object):
     WIDTH = 600
     HEIGHT = 600
 
-    REFRESH_TIMER = 10 #millisecs
+    REFRESH_TIMER = 1 #millisecs
 
     FOVY = 27.
     ZNEAR = 1
