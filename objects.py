@@ -62,10 +62,10 @@ class UVObject(Object):
         self.faces_v_num = []
         for u in range(self.maxU):
             for v in range(self.maxV):
-                point.append((u/(self.maxU+1),v/(self.maxV+1),0))
-                point.append((u/(self.maxU+1),(v+1)/(self.maxV+1),0))
-                point.append(((u+1)/(self.maxU+1),(v+1)/(self.maxV+1),0))
-                point.append(((u+1)/(self.maxU+1),v/(self.maxV+1),0))
+                point.append((u/(self.maxU+1),v/(self.maxV+1),0,1.0))
+                point.append((u/(self.maxU+1),(v+1)/(self.maxV+1),0,1.0))
+                point.append(((u+1)/(self.maxU+1),(v+1)/(self.maxV+1),0,1.0))
+                point.append(((u+1)/(self.maxU+1),v/(self.maxV+1),0,1.0))
                 self.faces_v_num.append(4)
 
         acc = self.faces_v_num[::]
@@ -73,7 +73,7 @@ class UVObject(Object):
         self.faces_v_start = np.cumsum(acc)
         self.faces_len = len(self.faces_v_num)
 
-        position = np.zeros(self.maxU * self.maxV * 4, [('position', np.float32, 3)])
+        position = np.zeros(self.maxU * self.maxV * 4, [('position', np.float32, 4)])
         position['position'] = point
         posBuffer = BufferHelper.sendToGPU('position', position, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders(self.program, 'position')
@@ -109,16 +109,16 @@ class Box(Object):
         super(Box, self).__init__(*args)
 
         # positions
-        position = np.zeros(8, [('position', np.float32, 3)])
+        position = np.zeros(8, [('position', np.float32, 4)])
         position['position'] = [
-            (-1,-1,-1),
-            (-1, 1,-1),
-            ( 1, 1,-1),
-            ( 1,-1,-1),
-            (-1,-1, 1),
-            (-1, 1, 1),
-            ( 1, 1, 1),
-            ( 1,-1, 1),
+            (-1,-1,-1, 1),
+            (-1, 1,-1, 1),
+            ( 1, 1,-1, 1),
+            ( 1,-1,-1, 1),
+            (-1,-1, 1, 1),
+            (-1, 1, 1, 1),
+            ( 1, 1, 1, 1),
+            ( 1,-1, 1, 1),
         ]
         posBuffer = BufferHelper.sendToGPU('position', position, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders(self.program, 'position')
@@ -184,6 +184,7 @@ class Obj(Object):
         # init storage
         vertices_lines = []
         faces_lines = []
+        normals_lines = []
 
         for line in obj.split('\n'):
             line = line.strip()
@@ -192,24 +193,34 @@ class Obj(Object):
 
             if line[:2] == 'v ':
                 vertices_lines.append(line)
-            if line[:2] == 'f ':
+            elif line[:2] == 'f ':
                 faces_lines.append(line)
+            elif line[:3] == 'vn ':
+                normals_lines.append(line)
 
         # clean up vertices
         vertices_all = [] # vertex buffer
         for line in vertices_lines:
-            vertices_all.append( tuple([float(x) for x in line.split()[1:]]) )
+            vertices_all.append( tuple([float(x) for x in line.split()[1:] + [1.0]]) )
+
+        # clean up vertices normals
+        normals_all = [] # normal buffer
+        for line in normals_lines:
+            normals_all.append( tuple([float(x) for x in line.split()[1:]]) )
 
         # clean up faces
         faces_v_num = [] # number of vertices to make face
         faces_ordered = [] # list of indices in order of face-indices
+        normals_ordered = [] # list of normals aligned with faces
         
         # convert each face to list of corresponding vertices
         for line in faces_lines:
             v_num = 0
-            for v in [int(x.split('//')[0]) for x in line.split()[1:]]:
-                faces_ordered.append(vertices_all[v-1])
+            for v in [int(x.split('//')[0])-1 for x in line.split()[1:]]:
+                faces_ordered.append(vertices_all[v])
                 v_num += 1
+            for v in [int(x.split('//')[1])-1 for x in line.split()[1:]]:
+                normals_ordered.append(normals_all[v])
             faces_v_num.append(v_num)
 
         self.faces_v_num = faces_v_num # number of vertices per face
@@ -218,8 +229,14 @@ class Obj(Object):
         self.faces_v_start = np.cumsum(acc) # start of corresponding face
         self.faces_len = len(faces_v_num)
         
+        # send ordered normals to GPU
+        normal = np.zeros(len(normals_ordered), [('normal', np.float32, 3)])
+        normal['normal'] = normals_ordered
+        normalBuffer = BufferHelper.sendToGPU('normal', normal, gl.GL_DYNAMIC_DRAW)
+        BufferHelper.sendToShaders(self.program, 'normal')
+
         # send ordered vertices to GPU
-        vertices = np.zeros(len(faces_ordered), [('vertices', np.float32, 3)])
+        vertices = np.zeros(len(faces_ordered), [('vertices', np.float32, 4)])
         vertices['vertices'] = faces_ordered
         verticesBuffer = BufferHelper.sendToGPU('vertices', vertices, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders(self.program, 'vertices', 'position')
@@ -233,6 +250,7 @@ class Obj(Object):
         wireframecolor = np.zeros(len(faces_ordered), [('wireframeColor', np.float32, 4)])
         wireframecolor['wireframeColor'] = [(1,1,1,1) for x in faces_ordered]
         wireframecolorBuffer = BufferHelper.sendToGPU('wireframeColor', wireframecolor, gl.GL_DYNAMIC_DRAW)
+
 
         
     def draw(self):

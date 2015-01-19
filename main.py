@@ -403,7 +403,7 @@ class QTSideBar(QtGui.QWidget):
         grid.addWidget(self.wireframe_checkbox, 2, 2, alignment=Qt.AlignCenter)
 
         grid.addWidget(self.color_label, 3, 1)
-        grid.addWidget(self.color_checkbox, 3, 3, alignment=Qt.AlignCenter)
+        grid.addWidget(self.color_checkbox, 3, 2, alignment=Qt.AlignCenter)
 
         # Finalize
         self.setLayout(grid)

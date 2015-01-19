@@ -3,10 +3,17 @@ uniform mat4 view;
 uniform mat4 model;
 
 attribute vec4 color;
-attribute vec3 position;
+attribute vec4 position;
+attribute vec3 normal;
+
 varying vec4 v_color;
+
 void main()
 {
-    gl_Position = projection * view * model * vec4(position, 1.0);
+    if(position.w == 1.0){
+        gl_Position = projection * view * model * position;
+    } else {
+        gl_Position = projection * view * model * (position + vec4(normal, 1.0));
+    }
     v_color = color;
 }
