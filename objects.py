@@ -2,8 +2,6 @@ from __future__ import division
 import sys
 import numpy as np
 
-import random
-
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
 import OpenGL.GLUT as glut
@@ -75,22 +73,29 @@ class UVObject(Object):
 
         position = np.zeros(self.maxU * self.maxV * 4, [('position', np.float32, 4)])
         position['position'] = point
-        posBuffer = BufferHelper.sendToGPU('position', position, gl.GL_DYNAMIC_DRAW)
+        BufferHelper.sendToGPU('position', position, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders(self.program, 'position')
 
         color = np.zeros(self.maxU * self.maxV * 4, [('color', np.float32, 4)])
-        color['color'] = [(random.uniform(0,1),random.uniform(0,1),random.uniform(0,1),1) for x in position]
-        colorBuffer = BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)
+        color['color'] = [GLOBAL.SOLID_COLOR for x in position]
+        BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)
 
         wireframecolor = np.zeros(self.maxU * self.maxV * 4, [('wireframeColor', np.float32, 4)])
-        wireframecolor['wireframeColor'] = [(1,1,1,1) for x in position]
-        wireframecolorBuffer = BufferHelper.sendToGPU('wireframeColor', wireframecolor, gl.GL_DYNAMIC_DRAW)
+        wireframecolor['wireframeColor'] = [GLOBAL.WIREFRAME_COLOR for x in position]
+        BufferHelper.sendToGPU('wireframeColor', wireframecolor, gl.GL_DYNAMIC_DRAW)
         
 
     def draw(self):
         if self.color_on:
+            # make sure polygons draw under wireframe
+            gl.glPolygonOffset(2.5, 0);
+            gl.glEnable(gl.GL_POLYGON_OFFSET_FILL);
+
             BufferHelper.sendToShaders(self.program, 'color')
             gl.glMultiDrawArrays(gl.GL_TRIANGLE_FAN, self.faces_v_start, self.faces_v_num, self.faces_len)
+
+            gl.glDisable(gl.GL_POLYGON_OFFSET_FILL);
+
 
         if self.wireframe_on:
             BufferHelper.sendToShaders(self.program, 'wireframeColor', 'color')
@@ -123,18 +128,16 @@ class Box(Object):
         posBuffer = BufferHelper.sendToGPU('position', position, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders(self.program, 'position')
 
+        # normals
+        normal = np.zeros(8, [('normal', np.float32, 3)])
+        normal['normal'] = [x[:3] for x in position['position']]
+        BufferHelper.sendToGPU('normal', normal, gl.GL_DYNAMIC_DRAW)
+        BufferHelper.sendToShaders(self.program, 'normal')
+        
+
         # colors for positions
         color = np.zeros(8, [('color', np.float32, 4)])
-        color['color'] = [
-            (0,0,0,1),
-            (0,1,0,1),
-            (1,1,0,1),
-            (1,0,0,1),
-            (0,0,1,1),
-            (0,1,1,1),
-            (1,1,1,1),
-            (1,0,1,1),
-        ]
+        color['color'] = [GLOBAL.SOLID_COLOR for x in position]
         colorBuffer = BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)
 
         # wire colors
@@ -160,9 +163,16 @@ class Box(Object):
         Basic draw function which sends elements to the shaders.
         """
         if self.color_on:
+            # make sure polygons draw under wireframe
+            gl.glPolygonOffset(2.5, 0);
+            gl.glEnable(gl.GL_POLYGON_OFFSET_FILL);
+
             BufferHelper.sendToShaders(self.program, 'color', 'color')
             for i in range(6): # draw each side
                 gl.glDrawElements(gl.GL_TRIANGLE_FAN, 4, gl.GL_UNSIGNED_INT, self.ind_buffer+4*4*i)
+
+            gl.glDisable(gl.GL_POLYGON_OFFSET_FILL);
+
 
         if self.wireframe_on:
             BufferHelper.sendToShaders(self.program, 'wireColor', 'color')
@@ -232,24 +242,24 @@ class Obj(Object):
         # send ordered normals to GPU
         normal = np.zeros(len(normals_ordered), [('normal', np.float32, 3)])
         normal['normal'] = normals_ordered
-        normalBuffer = BufferHelper.sendToGPU('normal', normal, gl.GL_DYNAMIC_DRAW)
+        BufferHelper.sendToGPU('normal', normal, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders(self.program, 'normal')
 
         # send ordered vertices to GPU
         vertices = np.zeros(len(faces_ordered), [('vertices', np.float32, 4)])
         vertices['vertices'] = faces_ordered
-        verticesBuffer = BufferHelper.sendToGPU('vertices', vertices, gl.GL_DYNAMIC_DRAW)
+        BufferHelper.sendToGPU('vertices', vertices, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders(self.program, 'vertices', 'position')
 
         # send colors to GPU
         color = np.zeros(len(faces_ordered), [('color', np.float32, 4)])
-        color['color'] = [(random.uniform(0,1),random.uniform(0,1),random.uniform(0,1),1) for x in faces_ordered]
-        colorBuffer = BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)
+        color['color'] = [GLOBAL.SOLID_COLOR for x in faces_ordered]
+        BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)
 
         # send wireframecolors to GPU
         wireframecolor = np.zeros(len(faces_ordered), [('wireframeColor', np.float32, 4)])
-        wireframecolor['wireframeColor'] = [(1,1,1,1) for x in faces_ordered]
-        wireframecolorBuffer = BufferHelper.sendToGPU('wireframeColor', wireframecolor, gl.GL_DYNAMIC_DRAW)
+        wireframecolor['wireframeColor'] = [GLOBAL.WIREFRAME_COLOR for x in faces_ordered]
+        BufferHelper.sendToGPU('wireframeColor', wireframecolor, gl.GL_DYNAMIC_DRAW)
 
 
         
@@ -259,8 +269,14 @@ class Obj(Object):
         """
 
         if self.color_on:
+            # make sure polygons draw under wireframe
+            gl.glPolygonOffset(2.5, 0);
+            gl.glEnable(gl.GL_POLYGON_OFFSET_FILL);
+            
             BufferHelper.sendToShaders(self.program, 'color')
             gl.glMultiDrawArrays(gl.GL_TRIANGLE_FAN, self.faces_v_start, self.faces_v_num, self.faces_len)
+            
+            gl.glDisable(gl.GL_POLYGON_OFFSET_FILL);
 
         if self.wireframe_on:
             BufferHelper.sendToShaders(self.program, 'wireframeColor', 'color')

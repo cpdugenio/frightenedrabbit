@@ -74,8 +74,9 @@ class Global(object):
     VERTEX_SHADER_LOC = 'vertex.glsl'
     FRAGMENT_SHADER_LOC = 'fragment.glsl'
 
-    CLEAR_COLOR = (.4, .4, .4, 1.)
-    WIREFRAME_COLOR = (0,0,0,1)
+    CLEAR_COLOR = (.05, .05, .05, 1.)
+    WIREFRAME_COLOR = (1,1,1,1)
+    SOLID_COLOR = (1,.6,0,1)
 
     def __init__(self):
         # read shader locations
