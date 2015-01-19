@@ -12,7 +12,7 @@ from OpenGL.arrays import vbo
 from configs import Global
 from bufferHelper import BufferHelper
 from transforms import Transform
-from objects import Box, Obj
+from objects import Box, Obj, UVObject
 
 from PyQt4.QtCore import Qt, QTimer
 from PyQt4 import QtGui
@@ -228,7 +228,8 @@ class GLUTDisplay(object):
 
     def setModel(self, text):
         switch = {
-            'Box' : Box
+            'Box' : Box,
+            'Grid' : UVObject
         }
 
         text = str(text)
@@ -377,6 +378,7 @@ class QTSideBar(QtGui.QWidget):
         self.models_combo = QtGui.QComboBox()
         self.models_label = QtGui.QLabel('Render Model: ')
         self.models_combo.addItem("Box")
+        self.models_combo.addItem("Grid")
         for model in os.listdir(GLOBAL.MODELS_LOC):
             self.models_combo.addItem(GLOBAL.MODELS_LOC + model)
 

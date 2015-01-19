@@ -50,19 +50,27 @@ class Global(object):
     WIDTH = 600
     HEIGHT = 600
 
-    REFRESH_TIMER = 1 #millisecs
+    REFRESH_TIMER = 1 # millisecs
 
+    # UI defaults
     COLOR_DEFAULT = True
     WIREFRAME_DEFAULT = False
 
+    # for UV objects
+    MAX_U = 25
+    MAX_V = 25
+
+    # perspective frustum
     FOVY = 27.
     ZNEAR = 1
     ZFAR = 2000.
 
+    # for camera transform
     EYE = (0,0,0)
     LOOKAT = (0,0,-15.)
     UP = (0.,1.,0.)
 
+    # default shaders
     VERTEX_SHADER_LOC = 'vertex.glsl'
     FRAGMENT_SHADER_LOC = 'fragment.glsl'
 

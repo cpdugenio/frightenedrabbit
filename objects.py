@@ -28,6 +28,8 @@ class Object(object):
         self.wireframe_on = False
         self.color_on = True
 
+        self.setVertexShader(GLOBAL.VERTEX_SHADER_LOC)
+
     def draw(self):
         raise NotImplementedError
 
@@ -37,6 +39,64 @@ class Object(object):
     def toggleColor(self):
         self.color_on = not self.color_on
 
+    def setVertexShader(self, loc):
+        vertexShader = gl.glCreateShader(gl.GL_VERTEX_SHADER)
+
+        gl.glShaderSource(vertexShader, open(loc).read())
+        gl.glCompileShader(vertexShader)
+
+        gl.glAttachShader(self.program, vertexShader)
+
+
+class UVObject(Object):
+    """
+    Base class for UV objects
+    """
+
+    def __init__(self, *args):
+        super(UVObject, self).__init__(*args)
+
+        self.maxU, self.maxV = GLOBAL.MAX_U, GLOBAL.MAX_V
+
+        point = []
+        self.faces_v_num = []
+        for u in range(self.maxU):
+            for v in range(self.maxV):
+                point.append((u/(self.maxU+1),v/(self.maxV+1),0))
+                point.append((u/(self.maxU+1),(v+1)/(self.maxV+1),0))
+                point.append(((u+1)/(self.maxU+1),(v+1)/(self.maxV+1),0))
+                point.append(((u+1)/(self.maxU+1),v/(self.maxV+1),0))
+                self.faces_v_num.append(4)
+
+        acc = self.faces_v_num[::]
+        acc.insert(0,0)
+        self.faces_v_start = np.cumsum(acc)
+        self.faces_len = len(self.faces_v_num)
+
+        position = np.zeros(self.maxU * self.maxV * 4, [('position', np.float32, 3)])
+        position['position'] = point
+        posBuffer = BufferHelper.sendToGPU('position', position, gl.GL_DYNAMIC_DRAW)
+        BufferHelper.sendToShaders(self.program, 'position')
+
+        color = np.zeros(self.maxU * self.maxV * 4, [('color', np.float32, 4)])
+        color['color'] = [(random.uniform(0,1),random.uniform(0,1),random.uniform(0,1),1) for x in position]
+        colorBuffer = BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)
+
+        wireframecolor = np.zeros(self.maxU * self.maxV * 4, [('wireframeColor', np.float32, 4)])
+        wireframecolor['wireframeColor'] = [(1,1,1,1) for x in position]
+        wireframecolorBuffer = BufferHelper.sendToGPU('wireframeColor', wireframecolor, gl.GL_DYNAMIC_DRAW)
+        
+
+    def draw(self):
+        if self.color_on:
+            BufferHelper.sendToShaders(self.program, 'color')
+            gl.glMultiDrawArrays(gl.GL_TRIANGLE_FAN, self.faces_v_start, self.faces_v_num, self.faces_len)
+
+        if self.wireframe_on:
+            BufferHelper.sendToShaders(self.program, 'wireframeColor', 'color')
+            gl.glMultiDrawArrays(gl.GL_LINE_LOOP, self.faces_v_start, self.faces_v_num, self.faces_len)
+
+        
 class Box(Object):
     """
     This is the basic box class to be rendered
