@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import division
+import os
 import sys
 import ctypes
 import OpenGL.GL as gl
@@ -209,8 +210,15 @@ class GLUTDisplay(object):
         """
         glut.glutMainLoop()
 
+    ##################
+    # Qt Event Calls #
+    ##################
+
     def changeScale(self, value):
         self.scale = value * 0.1
+
+    def resetRotation(self):
+        self.rotationMatrix = np.matrix(np.identity(4, dtype=np.float32))
 
     def toggleWireframe(self):
         self.render_obj.toggleWireframe()
@@ -218,17 +226,27 @@ class GLUTDisplay(object):
     def toggleColor(self):
         self.render_obj.toggleColor()
 
+    def setModel(self, text):
+        switch = {
+            'Box' : Box
+        }
+
+        text = str(text)
+
+        if text in switch.keys():
+            self.render_obj = switch[text](self.getProgram())
+        else:
+            self.render_obj = Obj(open(text).read(), self.getProgram())
+
 class QTDisplay(QGLWidget, GLUTDisplay):
     """
     PyQt4 OpenGL display class, re-using GLUTDisplay functions
     """
-    def __init__(self, obj, parent = None):
+    def __init__(self, parent = None):
         """
         Basic init of widget class
         """
         super(QTDisplay, self).__init__(parent)
-
-        self.obj = obj
 
         # turn on multisampling
         format = self.format()
@@ -257,10 +275,7 @@ class QTDisplay(QGLWidget, GLUTDisplay):
 
         self.prepTransformation()
 
-        if self.obj:
-            self.render_obj = Obj(self.obj, self.getProgram())
-        else:
-            self.render_obj = Box(self.getProgram())        
+        self.render_obj = Box(self.getProgram())        
         
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.paintGL)
@@ -278,10 +293,10 @@ class QTMainWindow(QtGui.QWidget):
     """
     Wrapper widget class (has a grid to house other widgets)
     """
-    def __init__(self, obj):
+    def __init__(self):
         super(QTMainWindow, self).__init__()
 
-        self.GLWidget = QTDisplay(obj)
+        self.GLWidget = QTDisplay()
         self.sidebar = QTSideBar(self.GLWidget)
 
         # scale slider
@@ -290,6 +305,10 @@ class QTMainWindow(QtGui.QWidget):
         self.scaleSlider.setSliderPosition(10)
         self.scaleSlider.valueChanged[int].connect(self.GLWidget.changeScale)
 
+        # reset rotation button
+        self.resetRotationBtn = QtGui.QPushButton("Reset Rotation")
+        self.resetRotationBtn.clicked.connect(self.GLWidget.resetRotation)
+
         self.initUI()
 
     def initUI(self):
@@ -297,13 +316,39 @@ class QTMainWindow(QtGui.QWidget):
         grid.setSpacing(10)
 
         grid.addWidget(self.GLWidget, 1, 1, 14, 14)
-        grid.addWidget(self.scaleSlider, 15, 2, 1, 13)
+        grid.addWidget(self.scaleSlider, 15, 2, 1, 10)
+        grid.addWidget(self.resetRotationBtn, 15, 12, 1, 3, alignment=Qt.AlignCenter)
         grid.addWidget(QtGui.QLabel('Scale'), 15, 1, 1, 1, alignment=Qt.AlignCenter)
         grid.addWidget(self.sidebar, 1, 15, 15, 5)
+
+        # connect reset with everything
+        self.sidebar.models_combo.activated[str].connect(self.resetUI)
         
         self.setLayout(grid) 
         
         self.setGeometry(100,100,1000,700)
+
+    def resetUI(self, text):
+        self.GLWidget.resetRotation()
+        self.scaleSlider.setSliderPosition(10)
+
+        if self.sidebar.color_checkbox.checkState() == Qt.Checked:
+            if not GLOBAL.COLOR_DEFAULT:
+                self.sidebar.color_checkbox.setCheckState(Qt.Unchecked)
+        else:
+            if GLOBAL.COLOR_DEFAULT:
+                self.sidebar.color_checkbox.setCheckState(Qt.Checked)
+
+        if self.sidebar.wireframe_checkbox.checkState() == Qt.Checked:
+            if not GLOBAL.WIREFRAME_DEFAULT:
+                self.sidebar.wireframe_checkbox.setCheckState(Qt.Unchecked)
+        else:
+            if GLOBAL.WIREFRAME_DEFAULT:
+                self.sidebar.wireframe_checkbox.setCheckState(Qt.Checked)
+
+        self.GLWidget.setModel(text)
+
+
 
 
 class QTSideBar(QtGui.QWidget):
@@ -328,6 +373,13 @@ class QTSideBar(QtGui.QWidget):
         # Create and link gui objects
         ##############################
 
+        # DROPDOWN
+        self.models_combo = QtGui.QComboBox()
+        self.models_label = QtGui.QLabel('Render Model: ')
+        self.models_combo.addItem("Box")
+        for model in os.listdir(GLOBAL.MODELS_LOC):
+            self.models_combo.addItem(GLOBAL.MODELS_LOC + model)
+
         # WIREFRAME
         self.wireframe_checkbox = QtGui.QCheckBox()
         self.wireframe_label = QtGui.QLabel('Toggle Wireframe')
@@ -342,26 +394,24 @@ class QTSideBar(QtGui.QWidget):
         ##################
         # Add gui to grid
         ##################
-        grid.addWidget(self.wireframe_label, 1, 1)
-        grid.addWidget(self.wireframe_checkbox, 1, 2, alignment=Qt.AlignCenter)
+        grid.addWidget(self.models_label, 1, 1)
+        grid.addWidget(self.models_combo, 1, 2)
+        
+        grid.addWidget(self.wireframe_label, 2, 1)
+        grid.addWidget(self.wireframe_checkbox, 2, 2, alignment=Qt.AlignCenter)
 
-        grid.addWidget(self.color_label, 2, 1)
-        grid.addWidget(self.color_checkbox, 2, 2, alignment=Qt.AlignCenter)
+        grid.addWidget(self.color_label, 3, 1)
+        grid.addWidget(self.color_checkbox, 3, 3, alignment=Qt.AlignCenter)
 
         # Finalize
         self.setLayout(grid)
 
 
 if __name__ == '__main__':
-
-    obj = None
-    if len(sys.argv) > 1:
-        obj = open(sys.argv[1]).read()
-    
     if not GLOBAL.GLUT_DISPLAY:
         app = QtGui.QApplication(sys.argv)
 
-        mainwindow = QTMainWindow(obj)
+        mainwindow = QTMainWindow()
         mainwindow.setWindowTitle("Frightened Qt Rabbit")
         mainwindow.show()
 

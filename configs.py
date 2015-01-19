@@ -45,10 +45,15 @@ class Global(object):
 
     GLUT_DISPLAY = False
 
+    MODELS_LOC = './models/'
+
     WIDTH = 600
     HEIGHT = 600
 
     REFRESH_TIMER = 1 #millisecs
+
+    COLOR_DEFAULT = True
+    WIREFRAME_DEFAULT = False
 
     FOVY = 27.
     ZNEAR = 1
