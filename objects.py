@@ -10,6 +10,7 @@ from OpenGL.arrays import vbo
 import ctypes
 
 from configs import Global
+from shaderHelper import ShaderHelper
 from bufferHelper import BufferHelper
 
 # use and edit configs.Global class for configs
@@ -20,13 +21,10 @@ class Object(object):
     This is the base class for rendering objects
     """
 
-    def __init__(self, program):
-        self.program = program
-
+    def __init__(self):
         self.wireframe_on = False
         self.color_on = True
-
-        self.setVertexShader(GLOBAL.VERTEX_SHADER_LOC)
+        self.buildShaders()
 
     def draw(self):
         raise NotImplementedError
@@ -37,33 +35,38 @@ class Object(object):
     def toggleColor(self):
         self.color_on = not self.color_on
 
-    def setVertexShader(self, loc):
-        vertexShader = gl.glCreateShader(gl.GL_VERTEX_SHADER)
+    def refreshUV(self):
+        pass
 
-        gl.glShaderSource(vertexShader, open(loc).read())
-        gl.glCompileShader(vertexShader)
-
-        gl.glAttachShader(self.program, vertexShader)
-
+    def buildShaders(self):
+        raise NotImplementedError
 
 class UVObject(Object):
     """
     Base class for UV objects
     """
 
-    def __init__(self, *args):
-        super(UVObject, self).__init__(*args)
+    def buildShaders(self):
+        ShaderHelper.buildAndUseProgram()
 
+    def __init__(self):
+        super(UVObject, self).__init__()
+
+        self.initUV()
+
+    def refreshUV(self):
+        self.initUV()
+
+    def initUV(self):
         self.maxU, self.maxV = GLOBAL.MAX_U, GLOBAL.MAX_V
-
         point = []
         self.faces_v_num = []
         for u in range(self.maxU):
             for v in range(self.maxV):
-                point.append((u/(self.maxU+1),v/(self.maxV+1),0,1.0))
-                point.append((u/(self.maxU+1),(v+1)/(self.maxV+1),0,1.0))
-                point.append(((u+1)/(self.maxU+1),(v+1)/(self.maxV+1),0,1.0))
-                point.append(((u+1)/(self.maxU+1),v/(self.maxV+1),0,1.0))
+                point.append((u/(self.maxU),v/(self.maxV),0,1.0))
+                point.append((u/(self.maxU),(v+1)/(self.maxV),0,1.0))
+                point.append(((u+1)/(self.maxU),(v+1)/(self.maxV),0,1.0))
+                point.append(((u+1)/(self.maxU),v/(self.maxV),0,1.0))
                 self.faces_v_num.append(4)
 
         acc = self.faces_v_num[::]
@@ -74,7 +77,12 @@ class UVObject(Object):
         position = np.zeros(self.maxU * self.maxV * 4, [('position', np.float32, 4)])
         position['position'] = point
         BufferHelper.sendToGPU('position', position, gl.GL_DYNAMIC_DRAW)
-        BufferHelper.sendToShaders(self.program, 'position')
+        BufferHelper.sendToShaders('position')
+
+        normal = np.zeros(self.maxU * self.maxV * 4, [('normal', np.float32, 4)])
+        normal['normal'] = [(x[0], x[1], x[2], 0.0) for x in point]
+        BufferHelper.sendToGPU('normal', normal, gl.GL_DYNAMIC_DRAW)
+        BufferHelper.sendToShaders('normal')        
 
         color = np.zeros(self.maxU * self.maxV * 4, [('color', np.float32, 4)])
         color['color'] = [GLOBAL.SOLID_COLOR for x in position]
@@ -83,6 +91,7 @@ class UVObject(Object):
         wireframecolor = np.zeros(self.maxU * self.maxV * 4, [('wireframeColor', np.float32, 4)])
         wireframecolor['wireframeColor'] = [GLOBAL.WIREFRAME_COLOR for x in position]
         BufferHelper.sendToGPU('wireframeColor', wireframecolor, gl.GL_DYNAMIC_DRAW)
+
         
 
     def draw(self):
@@ -91,27 +100,39 @@ class UVObject(Object):
             gl.glPolygonOffset(2.5, 0);
             gl.glEnable(gl.GL_POLYGON_OFFSET_FILL);
 
-            BufferHelper.sendToShaders(self.program, 'color')
+            BufferHelper.sendToShaders('color')
             gl.glMultiDrawArrays(gl.GL_TRIANGLE_FAN, self.faces_v_start, self.faces_v_num, self.faces_len)
 
             gl.glDisable(gl.GL_POLYGON_OFFSET_FILL);
 
 
         if self.wireframe_on:
-            BufferHelper.sendToShaders(self.program, 'wireframeColor', 'color')
+            BufferHelper.sendToShaders('wireframeColor', 'color')
             gl.glMultiDrawArrays(gl.GL_LINE_LOOP, self.faces_v_start, self.faces_v_num, self.faces_len)
 
+
+class UVSphere(UVObject):
+    def buildShaders(self):
+        ShaderHelper.buildAndUseProgram('sphere.glsl')
+
+    def __init__(self):
+        super(UVSphere, self).__init__()
         
 class Box(Object):
     """
     This is the basic box class to be rendered
     """
 
-    def __init__(self, *args):
-        """d
+
+    def buildShaders(self):
+        ShaderHelper.buildAndUseProgram()
+
+    def __init__(self):
+        """
         Initialize VBO points
         """
-        super(Box, self).__init__(*args)
+
+        super(Box, self).__init__()
 
         # positions
         position = np.zeros(8, [('position', np.float32, 4)])
@@ -126,13 +147,13 @@ class Box(Object):
             ( 1,-1, 1, 1),
         ]
         posBuffer = BufferHelper.sendToGPU('position', position, gl.GL_DYNAMIC_DRAW)
-        BufferHelper.sendToShaders(self.program, 'position')
+        BufferHelper.sendToShaders('position')
 
         # normals
         normal = np.zeros(8, [('normal', np.float32, 3)])
         normal['normal'] = [x[:3] for x in position['position']]
         BufferHelper.sendToGPU('normal', normal, gl.GL_DYNAMIC_DRAW)
-        BufferHelper.sendToShaders(self.program, 'normal')
+        BufferHelper.sendToShaders('normal')
         
 
         # colors for positions
@@ -167,7 +188,7 @@ class Box(Object):
             gl.glPolygonOffset(2.5, 0);
             gl.glEnable(gl.GL_POLYGON_OFFSET_FILL);
 
-            BufferHelper.sendToShaders(self.program, 'color', 'color')
+            BufferHelper.sendToShaders('color', 'color')
             for i in range(6): # draw each side
                 gl.glDrawElements(gl.GL_TRIANGLE_FAN, 4, gl.GL_UNSIGNED_INT, self.ind_buffer+4*4*i)
 
@@ -175,7 +196,7 @@ class Box(Object):
 
 
         if self.wireframe_on:
-            BufferHelper.sendToShaders(self.program, 'wireColor', 'color')
+            BufferHelper.sendToShaders('wireColor', 'color')
             for i in range(6):
                 gl.glDrawElements(gl.GL_LINE_LOOP, 4, gl.GL_UNSIGNED_INT, self.ind_buffer+4*4*i)
 
@@ -185,11 +206,16 @@ class Obj(Object):
     Given obj specs, renders
     """
 
-    def __init__(self, obj, *args):
+    def buildShaders(self):
+        ShaderHelper.buildAndUseProgram()
+
+
+    def __init__(self, obj):
         """
         Take everything from obj spec
         """
-        super(Obj, self).__init__(*args)
+
+        super(Obj, self).__init__()
 
         # init storage
         vertices_lines = []
@@ -243,13 +269,13 @@ class Obj(Object):
         normal = np.zeros(len(normals_ordered), [('normal', np.float32, 3)])
         normal['normal'] = normals_ordered
         BufferHelper.sendToGPU('normal', normal, gl.GL_DYNAMIC_DRAW)
-        BufferHelper.sendToShaders(self.program, 'normal')
+        BufferHelper.sendToShaders('normal')
 
         # send ordered vertices to GPU
         vertices = np.zeros(len(faces_ordered), [('vertices', np.float32, 4)])
         vertices['vertices'] = faces_ordered
         BufferHelper.sendToGPU('vertices', vertices, gl.GL_DYNAMIC_DRAW)
-        BufferHelper.sendToShaders(self.program, 'vertices', 'position')
+        BufferHelper.sendToShaders('vertices', 'position')
 
         # send colors to GPU
         color = np.zeros(len(faces_ordered), [('color', np.float32, 4)])
@@ -273,11 +299,11 @@ class Obj(Object):
             gl.glPolygonOffset(2.5, 0);
             gl.glEnable(gl.GL_POLYGON_OFFSET_FILL);
             
-            BufferHelper.sendToShaders(self.program, 'color')
+            BufferHelper.sendToShaders('color')
             gl.glMultiDrawArrays(gl.GL_TRIANGLE_FAN, self.faces_v_start, self.faces_v_num, self.faces_len)
             
             gl.glDisable(gl.GL_POLYGON_OFFSET_FILL);
 
         if self.wireframe_on:
-            BufferHelper.sendToShaders(self.program, 'wireframeColor', 'color')
+            BufferHelper.sendToShaders('wireframeColor', 'color')
             gl.glMultiDrawArrays(gl.GL_LINE_LOOP, self.faces_v_start, self.faces_v_num, self.faces_len)

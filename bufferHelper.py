@@ -9,6 +9,7 @@ import OpenGL.GLUT as glut
 import numpy as np
 from OpenGL.arrays import vbo
 from configs import Global
+from shaderHelper import ShaderHelper
 
 # use and edit configs.Global class for configs
 GLOBAL = Global()
@@ -63,7 +64,7 @@ class BufferHelper(object):
         return buffer
 
     @classmethod
-    def sendToShaders(cls, program, name, shader_vname = None):
+    def sendToShaders(cls, name, shader_vname = None):
         """
         Pulls shader parameter `shader_vname` location and linked with GPU buffer at `name`
 
@@ -89,14 +90,14 @@ class BufferHelper(object):
         offset = ctypes.c_void_p(0)  
 
         # query for shader variable information
-        loc = gl.glGetAttribLocation(program, shader_vname)
+        loc = gl.glGetAttribLocation(ShaderHelper.getProgram(), shader_vname)
         gl.glEnableVertexAttribArray(loc)
 
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buffer)
         gl.glVertexAttribPointer(loc, data[0][0].size, gl.GL_FLOAT, False, stride, offset)
 
     @classmethod
-    def sendUniformToShaders(cls, program, name, data, function_type):
+    def sendUniformToShaders(cls, name, data, function_type):
         """
         Send uniform information to the shaders (no GPU buffer upload necessary)
 
@@ -123,7 +124,7 @@ class BufferHelper(object):
             'm4': gl.glUniformMatrix4fv,
         }
         
-        loc = gl.glGetUniformLocation(program, name)
+        loc = gl.glGetUniformLocation(ShaderHelper.getProgram(), name)
         if function_type[0] == 'm':
             switch[function_type](loc, 1, gl.GL_FALSE, data)
         else:

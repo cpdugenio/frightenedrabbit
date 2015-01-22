@@ -25,7 +25,7 @@ void main()
     if(position.w == 1.0){
         gl_Position = projection * view * model * realposition;
     } else {
-        gl_Position = projection * view * model * (realposition + vec4(normal, 0.0));
+        gl_Position = projection * view * model * (realposition + vec4(normal, 1.0));
     }
 
     v_color = color;

@@ -79,6 +79,4 @@ class Global(object):
     SOLID_COLOR = (1,.6,0,1)
 
     def __init__(self):
-        # read shader locations
-        self.FRAGMENT_SHADER_CODE = open(self.FRAGMENT_SHADER_LOC).read()
-        self.VERTEX_SHADER_CODE = open(self.VERTEX_SHADER_LOC).read()
+        pass

@@ -10,9 +10,11 @@ import OpenGL.GLUT as glut
 import numpy as np
 from OpenGL.arrays import vbo
 from configs import Global
+
+from shaderHelper import ShaderHelper
 from bufferHelper import BufferHelper
 from transforms import Transform
-from objects import Box, Obj, UVObject
+from objects import Box, Obj, UVObject, UVSphere
 
 from PyQt4.QtCore import Qt, QTimer
 from PyQt4 import QtGui
@@ -20,6 +22,8 @@ from PyQt4.QtOpenGL import QGLWidget, QGLFormat
 
 # use and edit configs.Global class for configs
 GLOBAL = Global()
+
+default_obj = Box
 
 class GLUTDisplay(object):
     """
@@ -54,10 +58,8 @@ class GLUTDisplay(object):
 
         self.reshape(GLOBAL.WIDTH, GLOBAL.HEIGHT)
 
-        self.prepTransformation()
-
         # set object to be rendered
-        self.render_obj = Box(self.program)
+        self.render_obj = default_obj()
 
     def glutMouseMoveEvent(self, x, y):
         self.rotationMatrix *= Transform.yrotate((self.xorigpos - x) * -0.01)
@@ -67,19 +69,6 @@ class GLUTDisplay(object):
 
     def glutMousePressEvent(self, button, state, x, y):
         self.xorigpos, self.yorigpos = x, y
-
-    def getProgram(self):
-        """
-        Basic getter class for (GPU-linked) program -- raises error if not initialized
-
-        Notes
-        -----
-        Must call `self.buildProgram()` before using this function
-        """
-        if self.program:
-            return self.program
-        else:
-            raise RuntimeWarning
 
     @classmethod
     def onTimer(cls, t):
@@ -129,8 +118,7 @@ class GLUTDisplay(object):
         """
         gl.glViewport(0, 0, width, height)
 
-        projection_mat = Transform.perspective(GLOBAL.FOVY, width/height, GLOBAL.ZNEAR, GLOBAL.ZFAR)
-        BufferHelper.sendUniformToShaders(self.getProgram(), 'projection', projection_mat, 'm4')
+        self.projection_mat = Transform.perspective(GLOBAL.FOVY, width/height, GLOBAL.ZNEAR, GLOBAL.ZFAR)
 
     def keyboard(self, key, x, y ):
         """
@@ -142,34 +130,7 @@ class GLUTDisplay(object):
     def buildProgram(self):
         """
         This function builds, compiles, and links the GPU program and shaders
-
-        Note
-        ----
-        This function initializes the `self.program` var
         """
-        # create shaders and program from GPU
-        program  = gl.glCreateProgram()
-        vertex   = gl.glCreateShader(gl.GL_VERTEX_SHADER)
-        fragment = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
-        self.program = program
-
-        # set and compile shaders
-        gl.glShaderSource(vertex, GLOBAL.VERTEX_SHADER_CODE)
-        gl.glShaderSource(fragment, GLOBAL.FRAGMENT_SHADER_CODE)
-        gl.glCompileShader(vertex)
-        gl.glCompileShader(fragment)
-
-        # link shaders to  program
-        gl.glAttachShader(program, vertex)
-        gl.glAttachShader(program, fragment)
-
-        # build and clean up
-        gl.glLinkProgram(program)
-        gl.glDetachShader(program, vertex)
-        gl.glDetachShader(program, fragment)
-
-        # Make program the default program
-        gl.glUseProgram(program)
 
         # setup for mouseclick
         self.xrotate = 0
@@ -186,9 +147,11 @@ class GLUTDisplay(object):
         """
         Setup of the view and model matrices are done
         """
+        BufferHelper.sendUniformToShaders('projection', self.projection_mat, 'm4')
+
         # setup view matrix
         view_mat = np.array(Transform.lookat(GLOBAL.EYE, GLOBAL.LOOKAT, GLOBAL.UP))
-        BufferHelper.sendUniformToShaders(self.getProgram(), 'view', view_mat, 'm4')
+        BufferHelper.sendUniformToShaders('view', view_mat, 'm4')
 
         # setup model matrix
         model_mat = np.matrix(np.identity(4, dtype=np.float32))
@@ -202,7 +165,7 @@ class GLUTDisplay(object):
 
         # transform
         model_mat *= Transform.translate(0,0,-25)
-        BufferHelper.sendUniformToShaders(self.getProgram(), 'model', model_mat, 'm4')
+        BufferHelper.sendUniformToShaders('model', model_mat, 'm4')
 
     def run(self):
         """
@@ -226,18 +189,27 @@ class GLUTDisplay(object):
     def toggleColor(self):
         self.render_obj.toggleColor()
 
+    def changeuvV(self, value):
+        self.render_obj.refreshUV()
+        GLOBAL.MAX_V = value
+
+    def changeuvU(self, value):
+        self.render_obj.refreshUV()
+        GLOBAL.MAX_U = value
+
     def setModel(self, text):
         switch = {
             'Box' : Box,
-            'Grid' : UVObject
+            'Grid' : UVObject,
+            'UVSphere' : UVSphere
         }
 
         text = str(text)
 
         if text in switch.keys():
-            self.render_obj = switch[text](self.getProgram())
+            self.render_obj = switch[text]()
         else:
-            self.render_obj = Obj(open(text).read(), self.getProgram())
+            self.render_obj = Obj(open(text).read())
 
 class QTDisplay(QGLWidget, GLUTDisplay):
     """
@@ -274,9 +246,7 @@ class QTDisplay(QGLWidget, GLUTDisplay):
         """
         self.buildProgram()
 
-        self.prepTransformation()
-
-        self.render_obj = Box(self.getProgram())        
+        self.render_obj = default_obj()
         
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.paintGL)
@@ -379,6 +349,7 @@ class QTSideBar(QtGui.QWidget):
         self.models_label = QtGui.QLabel('Render Model: ')
         self.models_combo.addItem("Box")
         self.models_combo.addItem("Grid")
+        self.models_combo.addItem("UVSphere")
         for model in os.listdir(GLOBAL.MODELS_LOC):
             self.models_combo.addItem(GLOBAL.MODELS_LOC + model)
 
@@ -393,11 +364,25 @@ class QTSideBar(QtGui.QWidget):
         self.color_checkbox.setCheckState(Qt.Checked)
         self.color_checkbox.stateChanged[int].connect(self.glwidget.toggleColor)
 
+        # scale slider
+
+        self.uv_v_slider = QtGui.QSlider(Qt.Horizontal, self)
+        self.uv_v_label = QtGui.QLabel('V:')
+        self.uv_v_slider.setRange(2,100)
+        self.uv_v_slider.setSliderPosition(GLOBAL.MAX_U)
+        self.uv_v_slider.valueChanged[int].connect(self.glwidget.changeuvV)
+
+        self.uv_u_slider = QtGui.QSlider(Qt.Horizontal, self)
+        self.uv_u_label = QtGui.QLabel('U:')
+        self.uv_u_slider.setRange(2,100)
+        self.uv_u_slider.setSliderPosition(GLOBAL.MAX_U)
+        self.uv_u_slider.valueChanged[int].connect(self.glwidget.changeuvU)
+
         ##################
         # Add gui to grid
         ##################
         grid.addWidget(self.models_label, 1, 1)
-        grid.addWidget(self.models_combo, 1, 2)
+        grid.addWidget(self.models_combo, 1, 2, alignment=Qt.AlignCenter)
         
         grid.addWidget(self.wireframe_label, 2, 1)
         grid.addWidget(self.wireframe_checkbox, 2, 2, alignment=Qt.AlignCenter)
@@ -405,12 +390,19 @@ class QTSideBar(QtGui.QWidget):
         grid.addWidget(self.color_label, 3, 1)
         grid.addWidget(self.color_checkbox, 3, 2, alignment=Qt.AlignCenter)
 
+        grid.addWidget(self.uv_u_label, 4, 1)
+        grid.addWidget(self.uv_u_slider, 4, 2, alignment=Qt.AlignCenter)
+        grid.addWidget(self.uv_v_label, 4, 3)
+        grid.addWidget(self.uv_v_slider, 4, 4, alignment=Qt.AlignCenter)
+
+
         # Finalize
         self.setLayout(grid)
 
 
 if __name__ == '__main__':
     if not GLOBAL.GLUT_DISPLAY:
+        
         app = QtGui.QApplication(sys.argv)
 
         mainwindow = QTMainWindow()
