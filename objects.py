@@ -255,8 +255,9 @@ class Obj(Object):
             for v in [int(x.split('//')[0])-1 for x in line.split()[1:]]:
                 faces_ordered.append(vertices_all[v])
                 v_num += 1
-            for v in [int(x.split('//')[1])-1 for x in line.split()[1:]]:
-                normals_ordered.append(normals_all[v])
+            if len(normals_all):
+                for v in [int(x.split('//')[1])-1 for x in line.split()[1:]]:
+                    normals_ordered.append(normals_all[v])
             faces_v_num.append(v_num)
 
         self.faces_v_num = faces_v_num # number of vertices per face
@@ -266,8 +267,11 @@ class Obj(Object):
         self.faces_len = len(faces_v_num)
         
         # send ordered normals to GPU
-        normal = np.zeros(len(normals_ordered), [('normal', np.float32, 3)])
-        normal['normal'] = normals_ordered
+        normal = np.zeros(len(faces_ordered), [('normal', np.float32, 3)])
+        if len(normals_ordered):
+            normal['normal'] = normals_ordered
+        else:
+            normal['normal'] = [(0,0,0) for x in faces_ordered]
         BufferHelper.sendToGPU('normal', normal, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders('normal')
 

@@ -53,7 +53,7 @@ class Global(object):
     REFRESH_TIMER = 1 # millisecs
 
     # UI defaults
-    COLOR_DEFAULT = True
+    COLOR_DEFAULT = False
     WIREFRAME_DEFAULT = True
 
     # for UV objects
