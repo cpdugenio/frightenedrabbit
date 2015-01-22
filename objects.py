@@ -22,8 +22,8 @@ class Object(object):
     """
 
     def __init__(self):
-        self.wireframe_on = False
-        self.color_on = True
+        self.wireframe_on = Global.WIREFRAME_DEFAULT
+        self.color_on = Global.COLOR_DEFAULT
         self.buildShaders()
 
     def draw(self):
@@ -113,7 +113,7 @@ class UVObject(Object):
 
 class UVSphere(UVObject):
     def buildShaders(self):
-        ShaderHelper.buildAndUseProgram('sphere.glsl')
+        ShaderHelper.buildAndUseProgram('sphere.glsl', 'uvfragment.glsl')
 
     def __init__(self):
         super(UVSphere, self).__init__()

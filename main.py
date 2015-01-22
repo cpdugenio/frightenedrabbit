@@ -131,6 +131,7 @@ class GLUTDisplay(object):
         """
         This function builds, compiles, and links the GPU program and shaders
         """
+        
 
         # setup for mouseclick
         self.xrotate = 0
@@ -244,6 +245,7 @@ class QTDisplay(QGLWidget, GLUTDisplay):
         """
         Function is called after openGL is set up and ready -- can being to interact with GPU and shaders here.
         """
+
         self.buildProgram()
 
         self.render_obj = default_obj()
@@ -281,7 +283,7 @@ class QTMainWindow(QtGui.QWidget):
         self.resetRotationBtn.clicked.connect(self.GLWidget.resetRotation)
 
         self.initUI()
-
+        
     def initUI(self):
         grid = QtGui.QGridLayout()
         grid.setSpacing(10)
@@ -299,7 +301,8 @@ class QTMainWindow(QtGui.QWidget):
         
         self.setGeometry(100,100,1000,700)
 
-    def resetUI(self, text):
+
+    def resetUI(self, text = 'Box'):
         self.GLWidget.resetRotation()
         self.scaleSlider.setSliderPosition(10)
 
@@ -356,16 +359,20 @@ class QTSideBar(QtGui.QWidget):
         # WIREFRAME
         self.wireframe_checkbox = QtGui.QCheckBox()
         self.wireframe_label = QtGui.QLabel('Toggle Wireframe')
-        self.wireframe_checkbox.stateChanged[int].connect(self.glwidget.toggleWireframe)
 
         # COLOR
         self.color_checkbox = QtGui.QCheckBox()
         self.color_label = QtGui.QLabel('Toggle Color')
-        self.color_checkbox.setCheckState(Qt.Checked)
+
+        if GLOBAL.COLOR_DEFAULT:
+            self.color_checkbox.setCheckState(Qt.Checked)
+        if GLOBAL.WIREFRAME_DEFAULT:
+            self.wireframe_checkbox.setCheckState(Qt.Checked)
+
         self.color_checkbox.stateChanged[int].connect(self.glwidget.toggleColor)
+        self.wireframe_checkbox.stateChanged[int].connect(self.glwidget.toggleWireframe)
 
         # scale slider
-
         self.uv_v_slider = QtGui.QSlider(Qt.Horizontal, self)
         self.uv_v_label = QtGui.QLabel('V:')
         self.uv_v_slider.setRange(2,100)
@@ -402,7 +409,6 @@ class QTSideBar(QtGui.QWidget):
 
 if __name__ == '__main__':
     if not GLOBAL.GLUT_DISPLAY:
-        
         app = QtGui.QApplication(sys.argv)
 
         mainwindow = QTMainWindow()
