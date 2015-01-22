@@ -16,6 +16,10 @@ GLOBAL = Global()
 class ShaderHelper(object):
     """Keeps track of and provides useful functions for handling shaders"""
 
+    shaders = {
+    
+    }
+
     programs = {
         # (vertex_loc, fragment_loc) => program
     }
@@ -46,19 +50,27 @@ class ShaderHelper(object):
         program  = gl.glCreateProgram()
         
         # check if shaders are already used
-        vertex   = gl.glCreateShader(gl.GL_VERTEX_SHADER)
-        v_shader_code = open(vertex_loc).read()
-        gl.glShaderSource(vertex, v_shader_code)
-        gl.glCompileShader(vertex)
+        if vertex_loc in cls.shaders:
+            vertex = cls.shaders[vertex_loc]
+        else:
+            vertex   = gl.glCreateShader(gl.GL_VERTEX_SHADER)
+            v_shader_code = open(vertex_loc).read()
+            gl.glShaderSource(vertex, v_shader_code)
+            gl.glCompileShader(vertex)
+            cls.shaders[vertex_loc] = vertex
+            
         gl.glAttachShader(program, vertex)
 
-        fragment = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
-        f_shader_code = open(fragment_loc).read()
-        gl.glShaderSource(fragment, f_shader_code)
-        gl.glCompileShader(fragment)
+        if fragment_loc in cls.shaders:
+            fragment = cls.shaders[fragment_loc]
+        else:
+            fragment = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)            
+            f_shader_code = open(fragment_loc).read()
+            gl.glShaderSource(fragment, f_shader_code)
+            gl.glCompileShader(fragment)
+            cls.shaders[fragment_loc] = fragment
+            
         gl.glAttachShader(program, fragment)
-
-        cls.programs[(vertex_loc, fragment_loc)] = program
 
         # build and clean up
         gl.glLinkProgram(program)
@@ -68,3 +80,5 @@ class ShaderHelper(object):
 
         cls.program = program
         print "Now using program", cls.program
+        cls.programs[(vertex_loc, fragment_loc)] = program
+

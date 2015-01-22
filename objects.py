@@ -113,7 +113,7 @@ class UVObject(Object):
 
 class UVSphere(UVObject):
     def buildShaders(self):
-        ShaderHelper.buildAndUseProgram('sphere.glsl', 'uvfragment.glsl')
+        ShaderHelper.buildAndUseProgram('sphere.glsl', 'fragment.glsl')
 
     def __init__(self):
         super(UVSphere, self).__init__()
