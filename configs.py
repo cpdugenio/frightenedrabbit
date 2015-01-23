@@ -53,7 +53,7 @@ class Global(object):
     REFRESH_TIMER = 1 # millisecs
 
     # UI defaults
-    COLOR_DEFAULT = False
+    COLOR_DEFAULT = True
     WIREFRAME_DEFAULT = True
 
     # for UV objects
@@ -71,8 +71,8 @@ class Global(object):
     UP = (0.,1.,0.)
 
     # default shaders
-    VERTEX_SHADER_LOC = 'vertex.glsl'
-    FRAGMENT_SHADER_LOC = 'fragment.glsl'
+    VERTEX_SHADER_LOC = 'basic.vert'
+    FRAGMENT_SHADER_LOC = 'light.frag'
 
     CLEAR_COLOR = (.05, .05, .05, 1.)
     WIREFRAME_COLOR = (1,1,1,1)
