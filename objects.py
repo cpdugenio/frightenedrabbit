@@ -117,7 +117,28 @@ class UVSphere(UVObject):
 
     def __init__(self):
         super(UVSphere, self).__init__()
-        
+
+class UVMobius(UVObject):
+    def buildShaders(self):
+        ShaderHelper.buildAndUseProgram('mobius.glsl', 'fragment.glsl')
+
+    def __init__(self):
+        super(UVMobius, self).__init__()
+
+class UVTorus(UVObject):
+    def buildShaders(self):
+        ShaderHelper.buildAndUseProgram('torus.glsl', 'fragment.glsl')
+
+    def __init__(self):
+        super(UVTorus, self).__init__()
+
+class UVKlein(UVObject):
+    def buildShaders(self):
+        ShaderHelper.buildAndUseProgram('klein.glsl', 'fragment.glsl')
+
+    def __init__(self):
+        super(UVKlein, self).__init__()
+
 class Box(Object):
     """
     This is the basic box class to be rendered

@@ -17,7 +17,7 @@ class ShaderHelper(object):
     """Keeps track of and provides useful functions for handling shaders"""
 
     shaders = {
-    
+        # (shader_loc) => shader
     }
 
     programs = {

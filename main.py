@@ -14,7 +14,7 @@ from configs import Global
 from shaderHelper import ShaderHelper
 from bufferHelper import BufferHelper
 from transforms import Transform
-from objects import Box, Obj, UVObject, UVSphere
+from objects import Box, Obj, UVObject, UVSphere, UVMobius, UVTorus, UVKlein
 
 from PyQt4.QtCore import Qt, QTimer
 from PyQt4 import QtGui
@@ -202,7 +202,10 @@ class GLUTDisplay(object):
         switch = {
             'Box' : Box,
             'Grid' : UVObject,
-            'UVSphere' : UVSphere
+            'UVSphere' : UVSphere,
+            'UVMobius' : UVMobius,
+            'UVTorus' : UVTorus,
+            'UVKleinBottle' : UVKlein,
         }
 
         text = str(text)
@@ -353,6 +356,9 @@ class QTSideBar(QtGui.QWidget):
         self.models_combo.addItem("Box")
         self.models_combo.addItem("Grid")
         self.models_combo.addItem("UVSphere")
+        self.models_combo.addItem("UVMobius")
+        self.models_combo.addItem("UVKleinBottle")
+        self.models_combo.addItem("UVTorus")
         for model in os.listdir(GLOBAL.MODELS_LOC):
             self.models_combo.addItem(GLOBAL.MODELS_LOC + model)
 
