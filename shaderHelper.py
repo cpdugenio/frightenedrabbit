@@ -11,8 +11,6 @@ from OpenGL.arrays import vbo
 from configs import Global
 
 # use and edit configs.Global class for configs
-GLOBAL = Global()
-
 class ShaderHelper(object):
     """Keeps track of and provides useful functions for handling shaders"""
 

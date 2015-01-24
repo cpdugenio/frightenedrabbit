@@ -13,8 +13,6 @@ from configs import Global
 from shaderHelper import ShaderHelper
 from bufferHelper import BufferHelper
 
-# use and edit configs.Global class for configs
-GLOBAL = Global()
 
 class Object(object):
     """
@@ -58,7 +56,7 @@ class UVObject(Object):
         self.initUV()
 
     def initUV(self):
-        self.maxU, self.maxV = GLOBAL.MAX_U, GLOBAL.MAX_V
+        self.maxU, self.maxV = Global.MAX_U, Global.MAX_V
         point = []
         self.faces_v_num = []
         for u in range(self.maxU):
@@ -85,11 +83,11 @@ class UVObject(Object):
         BufferHelper.sendToShaders('normal')        
 
         color = np.zeros(self.maxU * self.maxV * 4, [('color', np.float32, 4)])
-        color['color'] = [GLOBAL.SOLID_COLOR for x in position]
+        color['color'] = [Global.SOLID_COLOR for x in position]
         BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)
 
         wireframecolor = np.zeros(self.maxU * self.maxV * 4, [('wireframeColor', np.float32, 4)])
-        wireframecolor['wireframeColor'] = [GLOBAL.WIREFRAME_COLOR for x in position]
+        wireframecolor['wireframeColor'] = [Global.WIREFRAME_COLOR for x in position]
         BufferHelper.sendToGPU('wireframeColor', wireframecolor, gl.GL_DYNAMIC_DRAW)
 
         
@@ -179,12 +177,12 @@ class Box(Object):
 
         # colors for positions
         color = np.zeros(8, [('color', np.float32, 4)])
-        color['color'] = [GLOBAL.SOLID_COLOR for x in position]
+        color['color'] = [Global.SOLID_COLOR for x in position]
         colorBuffer = BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)
 
         # wire colors
         wireColor = np.zeros(8, [('wireColor', np.float32, 4)])
-        wireColor['wireColor'] = [GLOBAL.WIREFRAME_COLOR for i in range(8)]
+        wireColor['wireColor'] = [Global.WIREFRAME_COLOR for i in range(8)]
         wireColorBuffer = BufferHelper.sendToGPU('wireColor', wireColor, gl.GL_DYNAMIC_DRAW)
 
         # set up indices for drawing
@@ -304,12 +302,12 @@ class Obj(Object):
 
         # send colors to GPU
         color = np.zeros(len(faces_ordered), [('color', np.float32, 4)])
-        color['color'] = [GLOBAL.SOLID_COLOR for x in faces_ordered]
+        color['color'] = [Global.SOLID_COLOR for x in faces_ordered]
         BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)
 
         # send wireframecolors to GPU
         wireframecolor = np.zeros(len(faces_ordered), [('wireframeColor', np.float32, 4)])
-        wireframecolor['wireframeColor'] = [GLOBAL.WIREFRAME_COLOR for x in faces_ordered]
+        wireframecolor['wireframeColor'] = [Global.WIREFRAME_COLOR for x in faces_ordered]
         BufferHelper.sendToGPU('wireframeColor', wireframecolor, gl.GL_DYNAMIC_DRAW)
 
 

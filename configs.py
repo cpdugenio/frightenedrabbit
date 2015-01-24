@@ -1,34 +1,6 @@
-class Singleton(type):
-    """
-    Singleton metaclass
-
-    Notes
-    -----
-    To make a class a `Singleton`, set `__metaclass__ = Singleton` and call.
-
-    ```
-    class Global(Object):
-        __metaclass__ = Singleton
-
-    mySingleton = Global()
-    sameSingleton = Global()
-    assert mySingleton == sameSingleton
-    ```
-    """
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        """
-        Call your singleton class to get.
-        """
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args)
-        return cls._instances[cls]
-
-
 class Global(object):
     """
-    Singleton Global class used for configs
+    Global class used for configs
 
     Notes
     -----
@@ -37,8 +9,6 @@ class Global(object):
         `FRAGMENT_SHADER_LOC` => `FRAGMENT_SHADER_CODE`
     """
     
-    __metaclass__ = Singleton
-
     ###################
     # BEGIN CONFIGS
     ###################
@@ -77,6 +47,3 @@ class Global(object):
     CLEAR_COLOR = (.05, .05, .05, 1.)
     WIREFRAME_COLOR = (1,1,1,1)
     SOLID_COLOR = (1,.6,0,1)
-
-    def __init__(self):
-        pass

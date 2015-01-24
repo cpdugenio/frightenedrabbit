@@ -9,19 +9,18 @@ import OpenGL.GLU as glu
 import OpenGL.GLUT as glut
 import numpy as np
 from OpenGL.arrays import vbo
-from configs import Global
 
+from configs import Global
 from shaderHelper import ShaderHelper
 from bufferHelper import BufferHelper
 from transforms import Transform
+
 from objects import Box, Obj, UVObject, UVSphere, UVMobius, UVTorus, UVKlein
 
 from PyQt4.QtCore import Qt, QTimer
 from PyQt4 import QtGui
 from PyQt4.QtOpenGL import QGLWidget, QGLFormat
 
-# use and edit configs.Global class for configs
-GLOBAL = Global()
 
 default_obj = Box
 
@@ -46,17 +45,17 @@ class GLUTDisplay(object):
         glut.glutInit()
         glut.glutInitDisplayMode(glut.GLUT_RGBA | glut.GLUT_DOUBLE | glut.GLUT_DEPTH | glut.GLUT_MULTISAMPLE)
         glut.glutCreateWindow('Frightened Glut Rabbit')
-        glut.glutReshapeWindow(GLOBAL.WIDTH, GLOBAL.HEIGHT)
+        glut.glutReshapeWindow(Global.WIDTH, Global.HEIGHT)
         glut.glutReshapeFunc(self.reshape)
         glut.glutDisplayFunc(self.display)
         glut.glutKeyboardFunc(self.keyboard)
         glut.glutMouseFunc(self.glutMousePressEvent)
         glut.glutMotionFunc(self.glutMouseMoveEvent)
-        glut.glutTimerFunc(GLOBAL.REFRESH_TIMER, self.onTimer, GLOBAL.REFRESH_TIMER)
+        glut.glutTimerFunc(Global.REFRESH_TIMER, self.onTimer, Global.REFRESH_TIMER)
 
         self.buildProgram()
 
-        self.reshape(GLOBAL.WIDTH, GLOBAL.HEIGHT)
+        self.reshape(Global.WIDTH, Global.HEIGHT)
 
         # set object to be rendered
         self.render_obj = default_obj()
@@ -92,7 +91,7 @@ class GLUTDisplay(object):
         `self.render_obj` is being drawn here, initialized in `self.__init__()`
         """
 
-        gl.glClearColor(*GLOBAL.CLEAR_COLOR)
+        gl.glClearColor(*Global.CLEAR_COLOR)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glEnable(gl.GL_DEPTH_TEST)
 
@@ -118,7 +117,7 @@ class GLUTDisplay(object):
         """
         gl.glViewport(0, 0, width, height)
 
-        self.projection_mat = Transform.perspective(GLOBAL.FOVY, width/height, GLOBAL.ZNEAR, GLOBAL.ZFAR)
+        self.projection_mat = Transform.perspective(Global.FOVY, width/height, Global.ZNEAR, Global.ZFAR)
 
     def keyboard(self, key, x, y ):
         """
@@ -151,7 +150,7 @@ class GLUTDisplay(object):
         BufferHelper.sendUniformToShaders('projection', self.projection_mat, 'm4')
 
         # setup view matrix
-        view_mat = np.array(Transform.lookat(GLOBAL.EYE, GLOBAL.LOOKAT, GLOBAL.UP))
+        view_mat = np.array(Transform.lookat(Global.EYE, Global.LOOKAT, Global.UP))
         BufferHelper.sendUniformToShaders('view', view_mat, 'm4')
 
         # setup model matrix
@@ -192,11 +191,11 @@ class GLUTDisplay(object):
 
     def changeuvV(self, value):
         self.render_obj.refreshUV()
-        GLOBAL.MAX_V = value
+        Global.MAX_V = value
 
     def changeuvU(self, value):
         self.render_obj.refreshUV()
-        GLOBAL.MAX_U = value
+        Global.MAX_U = value
 
     def setModel(self, text):
         switch = {
@@ -255,7 +254,7 @@ class QTDisplay(QGLWidget, GLUTDisplay):
         
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.paintGL)
-        self.timer.start(GLOBAL.REFRESH_TIMER)
+        self.timer.start(Global.REFRESH_TIMER)
         
     def resizeGL(self, width, height):
         """
@@ -302,7 +301,7 @@ class QTMainWindow(QtGui.QWidget):
         
         self.setLayout(grid) 
         
-        self.setGeometry(100,100,1000,700)
+        self.setGeometry(0,0,1000,700)
 
 
     def resetUI(self, text = 'Box'):
@@ -310,17 +309,17 @@ class QTMainWindow(QtGui.QWidget):
         self.scaleSlider.setSliderPosition(10)
 
         if self.sidebar.color_checkbox.checkState() == Qt.Checked:
-            if not GLOBAL.COLOR_DEFAULT:
+            if not Global.COLOR_DEFAULT:
                 self.sidebar.color_checkbox.setCheckState(Qt.Unchecked)
         else:
-            if GLOBAL.COLOR_DEFAULT:
+            if Global.COLOR_DEFAULT:
                 self.sidebar.color_checkbox.setCheckState(Qt.Checked)
 
         if self.sidebar.wireframe_checkbox.checkState() == Qt.Checked:
-            if not GLOBAL.WIREFRAME_DEFAULT:
+            if not Global.WIREFRAME_DEFAULT:
                 self.sidebar.wireframe_checkbox.setCheckState(Qt.Unchecked)
         else:
-            if GLOBAL.WIREFRAME_DEFAULT:
+            if Global.WIREFRAME_DEFAULT:
                 self.sidebar.wireframe_checkbox.setCheckState(Qt.Checked)
 
         self.GLWidget.setModel(text)
@@ -359,8 +358,8 @@ class QTSideBar(QtGui.QWidget):
         self.models_combo.addItem("UVMobius")
         self.models_combo.addItem("UVKleinBottle")
         self.models_combo.addItem("UVTorus")
-        for model in os.listdir(GLOBAL.MODELS_LOC):
-            self.models_combo.addItem(GLOBAL.MODELS_LOC + model)
+        for model in os.listdir(Global.MODELS_LOC):
+            self.models_combo.addItem(Global.MODELS_LOC + model)
 
         # WIREFRAME
         self.wireframe_checkbox = QtGui.QCheckBox()
@@ -370,9 +369,9 @@ class QTSideBar(QtGui.QWidget):
         self.color_checkbox = QtGui.QCheckBox()
         self.color_label = QtGui.QLabel('Toggle Color')
 
-        if GLOBAL.COLOR_DEFAULT:
+        if Global.COLOR_DEFAULT:
             self.color_checkbox.setCheckState(Qt.Checked)
-        if GLOBAL.WIREFRAME_DEFAULT:
+        if Global.WIREFRAME_DEFAULT:
             self.wireframe_checkbox.setCheckState(Qt.Checked)
 
         self.color_checkbox.stateChanged[int].connect(self.glwidget.toggleColor)
@@ -382,13 +381,13 @@ class QTSideBar(QtGui.QWidget):
         self.uv_v_slider = QtGui.QSlider(Qt.Horizontal, self)
         self.uv_v_label = QtGui.QLabel('V:')
         self.uv_v_slider.setRange(2,100)
-        self.uv_v_slider.setSliderPosition(GLOBAL.MAX_U)
+        self.uv_v_slider.setSliderPosition(Global.MAX_U)
         self.uv_v_slider.valueChanged[int].connect(self.glwidget.changeuvV)
 
         self.uv_u_slider = QtGui.QSlider(Qt.Horizontal, self)
         self.uv_u_label = QtGui.QLabel('U:')
         self.uv_u_slider.setRange(2,100)
-        self.uv_u_slider.setSliderPosition(GLOBAL.MAX_U)
+        self.uv_u_slider.setSliderPosition(Global.MAX_U)
         self.uv_u_slider.valueChanged[int].connect(self.glwidget.changeuvU)
 
         ##################
@@ -414,7 +413,7 @@ class QTSideBar(QtGui.QWidget):
 
 
 if __name__ == '__main__':
-    if not GLOBAL.GLUT_DISPLAY:
+    if not Global.GLUT_DISPLAY:
         app = QtGui.QApplication(sys.argv)
 
         mainwindow = QTMainWindow()
