@@ -41,8 +41,8 @@ class Global(object):
     UP = (0.,1.,0.)
 
     # default shaders
-    VERTEX_SHADER_LOC = 'basic.vert'
-    FRAGMENT_SHADER_LOC = 'light.frag'
+    VERTEX_SHADER_LOC = 'shaders/basic.vert'
+    FRAGMENT_SHADER_LOC = 'shaders/light.frag'
 
     CLEAR_COLOR = (.05, .05, .05, 1.)
     WIREFRAME_COLOR = (1,1,1,1)

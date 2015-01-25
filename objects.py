@@ -161,21 +161,21 @@ class UVObject(Object):
 
 class UVSphere(UVObject):
     def buildShaders(self):
-        ShaderHelper.buildAndUseProgram('sphere.vert')
+        ShaderHelper.buildAndUseProgram('shaders/sphere.vert')
 
     def __init__(self):
         super(UVSphere, self).__init__()
 
 class UVMobius(UVObject):
     def buildShaders(self):
-        ShaderHelper.buildAndUseProgram('mobius.vert')
+        ShaderHelper.buildAndUseProgram('shaders/mobius.vert')
 
     def __init__(self):
         super(UVMobius, self).__init__()
 
 class UVTorus(UVObject):
     def buildShaders(self):
-        ShaderHelper.buildAndUseProgram('torus.vert')
+        ShaderHelper.buildAndUseProgram('shaders/torus.vert')
 
     def __init__(self):
         super(UVTorus, self).__init__()
@@ -214,7 +214,7 @@ class UVTorus(UVObject):
 
 class UVKlein(UVObject):
     def buildShaders(self):
-        ShaderHelper.buildAndUseProgram('klein.vert')
+        ShaderHelper.buildAndUseProgram('shaders/klein.vert')
         self.defaultRad = 25
         self.changeRadius(self.defaultRad)
 
