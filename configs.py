@@ -27,8 +27,8 @@ class Global(object):
     WIREFRAME_DEFAULT = True
 
     # for UV objects
-    MAX_U = 25
-    MAX_V = 25
+    MAX_U = 100
+    MAX_V = 100
 
     # perspective frustum
     FOVY = 27.

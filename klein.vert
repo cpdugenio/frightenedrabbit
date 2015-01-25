@@ -1,6 +1,7 @@
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
+uniform float r;
 
 attribute vec4 color;
 attribute vec4 position;
@@ -12,7 +13,7 @@ void main()
 {
     float PI = 3.14159265358979323846264;
 
-    float r = 2.5;
+    //float r = 2.5;
 
     vec4 realposition = vec4(1,1,1,1);
 

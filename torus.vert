@@ -1,6 +1,8 @@
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
+uniform float RADIUS;
+uniform float r;
 
 attribute vec4 color;
 attribute vec4 position;
@@ -11,8 +13,8 @@ varying vec4 v_color;
 void main()
 {
     float PI = 3.14159265358979323846264;
-    float RADIUS = 1.0; // radius to center
-    float r = .3; // radius of tube
+    //float RADIUS = 1.0; // radius to center
+    //float r = .3; // radius of tube
 
     vec4 realposition = vec4(1,1,1,1);
 

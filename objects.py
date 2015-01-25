@@ -9,6 +9,10 @@ import OpenGL.GLUT as glut
 from OpenGL.arrays import vbo
 import ctypes
 
+from PyQt4.QtCore import Qt
+from PyQt4 import QtGui
+from PyQt4.QtOpenGL import QGLWidget, QGLFormat
+
 from configs import Global
 from shaderHelper import ShaderHelper
 from bufferHelper import BufferHelper
@@ -39,6 +43,24 @@ class Object(object):
     def buildShaders(self):
         raise NotImplementedError
 
+    def testFunction(self, value):
+        print value
+
+    def setLayoutAttr(self, layout):
+        """
+        Return (current row nums, current max colspan)
+        """
+        return (0,0)
+        
+
+    def getWidget(self):
+        widget = QtGui.QWidget()
+        grid = QtGui.QGridLayout()
+        grid.setSpacing(10)
+        self.setLayoutAttr(grid)
+        widget.setLayout(grid)
+        return widget
+
 class UVObject(Object):
     """
     Base class for UV objects
@@ -50,13 +72,20 @@ class UVObject(Object):
     def __init__(self):
         super(UVObject, self).__init__()
 
+        self.U, self.V = 20, 20
+
         self.initUV()
 
-    def refreshUV(self):
+    def changeV(self, value):
+        self.V = value
+        self.initUV()
+
+    def changeU(self, value):
+        self.U = value
         self.initUV()
 
     def initUV(self):
-        self.maxU, self.maxV = Global.MAX_U, Global.MAX_V
+        self.maxU, self.maxV = self.U, self.V
         point = []
         self.faces_v_num = []
         for u in range(self.maxU):
@@ -90,12 +119,32 @@ class UVObject(Object):
         wireframecolor['wireframeColor'] = [Global.WIREFRAME_COLOR for x in position]
         BufferHelper.sendToGPU('wireframeColor', wireframecolor, gl.GL_DYNAMIC_DRAW)
 
+
+    def setLayoutAttr(self, layout):
+        """
+        Return (current row nums, current max colspan)
+        """
+        u_slider = QtGui.QSlider(Qt.Horizontal)
+        u_slider.setRange(2, Global.MAX_U)
+        u_slider.setSliderPosition(self.U)
+        u_slider.valueChanged[int].connect(self.changeU)
+        
+        v_slider = QtGui.QSlider(Qt.Horizontal)
+        v_slider.setRange(2, Global.MAX_V)
+        v_slider.setSliderPosition(self.V)
+        v_slider.valueChanged[int].connect(self.changeV)
+
+        layout.addWidget(QtGui.QLabel('U:'), 1, 1)
+        layout.addWidget(u_slider, 1, 2, 1, 2)
+        layout.addWidget(QtGui.QLabel('V:'), 2, 1)
+        layout.addWidget(v_slider, 2, 2, 1, 2)
+        return (2,3)
         
 
     def draw(self):
         if self.color_on:
             # make sure polygons draw under wireframe
-            gl.glPolygonOffset(2.5, 0);
+            gl.glPolygonOffset(5, 0);
             gl.glEnable(gl.GL_POLYGON_OFFSET_FILL);
 
             BufferHelper.sendToShaders('color')
@@ -129,13 +178,64 @@ class UVTorus(UVObject):
 
     def __init__(self):
         super(UVTorus, self).__init__()
+        self.defaultOuterRad = 10
+        self.defaultInnerRad = 3
+        self.changeOuterRadius(self.defaultOuterRad)
+        self.changeInnerRadius(self.defaultInnerRad)
+
+    def changeOuterRadius(self, value):
+        BufferHelper.sendUniformToShaders('RADIUS', [value/10.0], '1f')
+
+    def changeInnerRadius(self, value):
+        BufferHelper.sendUniformToShaders('r', [value/10.0], '1f')
+
+    def setLayoutAttr(self, layout):
+        rows, colspan = super(UVTorus, self).setLayoutAttr(layout)
+
+        ri_slider = QtGui.QSlider(Qt.Horizontal)
+        ri_slider.setRange(1, 100)
+        ri_slider.setSliderPosition(self.defaultInnerRad)
+        ri_slider.valueChanged[int].connect(self.changeInnerRadius)
+
+        ro_slider = QtGui.QSlider(Qt.Horizontal)
+        ro_slider.setRange(1, 100)
+        ro_slider.setSliderPosition(self.defaultOuterRad)
+        ro_slider.valueChanged[int].connect(self.changeOuterRadius)
+        
+        layout.addWidget(QtGui.QLabel('Inner Radius'), rows+1, 1)
+        layout.addWidget(ri_slider, rows+1, 2, 1, colspan-2)
+
+        layout.addWidget(QtGui.QLabel('Outer Radius'), rows+2, 1)
+        layout.addWidget(ro_slider, rows+2, 2, 1, colspan-2)
+        
+        return (rows+2, colspan)
+
 
 class UVKlein(UVObject):
     def buildShaders(self):
         ShaderHelper.buildAndUseProgram('klein.vert')
+        self.defaultRad = 25
+        self.changeRadius(self.defaultRad)
 
     def __init__(self):
         super(UVKlein, self).__init__()
+
+    def setLayoutAttr(self, layout):
+        rows, colspan = super(UVKlein, self).setLayoutAttr(layout)
+
+        r_slider = QtGui.QSlider(Qt.Horizontal)
+        r_slider.setRange(1, 100)
+        r_slider.setSliderPosition(self.defaultRad)
+        r_slider.valueChanged[int].connect(self.changeRadius)
+        
+        layout.addWidget(QtGui.QLabel('Radius'), rows+1, 1)
+        layout.addWidget(r_slider, rows+1, 2, 1, colspan-2)
+        
+        return (rows+1, colspan)
+
+    def changeRadius(self, value):
+        BufferHelper.sendUniformToShaders('r', [value/10.0], '1f')
+        
 
 class Box(Object):
     """

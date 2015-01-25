@@ -33,15 +33,12 @@ class ShaderHelper(object):
 
     @classmethod
     def buildAndUseProgram(cls, vertex_loc = Global.VERTEX_SHADER_LOC, fragment_loc = Global.FRAGMENT_SHADER_LOC):
-        print 'building and using [v: %s, f: %s]' %(vertex_loc, fragment_loc)
-
         # check if vertex, fragment combo is already a program
         if (vertex_loc, fragment_loc) in cls.programs:
 
             program = cls.programs[(vertex_loc, fragment_loc)]
             gl.glUseProgram(program)
             cls.program = program
-            print "Now using program", cls.program
             return
 
         # create program for GPU
@@ -77,6 +74,5 @@ class ShaderHelper(object):
         gl.glUseProgram(program)
 
         cls.program = program
-        print "Now using program", cls.program
         cls.programs[(vertex_loc, fragment_loc)] = program
 
