@@ -7,6 +7,7 @@ attribute vec4 position;
 attribute vec3 normal;
 
 varying vec4 v_color;
+varying vec3 f_normal;
 
 void main()
 {
@@ -29,4 +30,5 @@ void main()
     }
 
     v_color = color;
+    f_normal = vec3(0,0,0);
 }

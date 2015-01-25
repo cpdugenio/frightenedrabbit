@@ -162,6 +162,9 @@ class QTSideBar(QtGui.QWidget):
 
         grid.addWidget(self.morphWidget, 4, 1, 7, 2)
 
+
+
+
         # Finalize
         self.setLayout(grid)
 

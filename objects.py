@@ -6,6 +6,7 @@ import OpenGL.GL as gl
 import OpenGL.GLU as glu
 import OpenGL.GLUT as glut
 
+from OpenGL import arrays
 from OpenGL.arrays import vbo
 import ctypes
 
@@ -112,7 +113,7 @@ class UVObject(Object):
         BufferHelper.sendToShaders('normal')        
 
         color = np.zeros(self.maxU * self.maxV * 4, [('color', np.float32, 4)])
-        color['color'] = [Global.SOLID_COLOR for x in position]
+        color['color'] = [Global.SOLID_COLOR for i in range(len(position))]
         BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)
 
         wireframecolor = np.zeros(self.maxU * self.maxV * 4, [('wireframeColor', np.float32, 4)])
@@ -135,10 +136,10 @@ class UVObject(Object):
         v_slider.valueChanged[int].connect(self.changeV)
 
         layout.addWidget(QtGui.QLabel('U:'), 1, 1)
-        layout.addWidget(u_slider, 1, 2, 1, 2)
+        layout.addWidget(u_slider, 1, 2, 1, 3)
         layout.addWidget(QtGui.QLabel('V:'), 2, 1)
-        layout.addWidget(v_slider, 2, 2, 1, 2)
-        return (2,3)
+        layout.addWidget(v_slider, 2, 2, 1, 3)
+        return (2,4)
         
 
     def draw(self):
@@ -203,10 +204,10 @@ class UVTorus(UVObject):
         ro_slider.valueChanged[int].connect(self.changeOuterRadius)
         
         layout.addWidget(QtGui.QLabel('Inner Radius'), rows+1, 1)
-        layout.addWidget(ri_slider, rows+1, 2, 1, colspan-2)
+        layout.addWidget(ri_slider, rows+1, 2, 1, colspan-3)
 
         layout.addWidget(QtGui.QLabel('Outer Radius'), rows+2, 1)
-        layout.addWidget(ro_slider, rows+2, 2, 1, colspan-2)
+        layout.addWidget(ro_slider, rows+2, 2, 1, colspan-3)
         
         return (rows+2, colspan)
 
@@ -229,7 +230,7 @@ class UVKlein(UVObject):
         r_slider.valueChanged[int].connect(self.changeRadius)
         
         layout.addWidget(QtGui.QLabel('Radius'), rows+1, 1)
-        layout.addWidget(r_slider, rows+1, 2, 1, colspan-2)
+        layout.addWidget(r_slider, rows+1, 2, 1, colspan-3)
         
         return (rows+1, colspan)
 
@@ -254,47 +255,73 @@ class Box(Object):
         super(Box, self).__init__()
 
         # positions
-        position = np.zeros(8, [('position', np.float32, 4)])
+        position = np.zeros(24, [('position', np.float32, 4)])
         position['position'] = [
-            (-1,-1,-1, 1),
-            (-1, 1,-1, 1),
-            ( 1, 1,-1, 1),
-            ( 1,-1,-1, 1),
-            (-1,-1, 1, 1),
-            (-1, 1, 1, 1),
-            ( 1, 1, 1, 1),
-            ( 1,-1, 1, 1),
+            # top
+            (-1.0, 1.0,-1.0, 1.0),
+            ( 1.0, 1.0,-1.0, 1.0),
+            ( 1.0, 1.0, 1.0, 1.0),
+            (-1.0, 1.0, 1.0, 1.0),
+            # bottom
+            (-1.0,-1.0,-1.0, 1.0),
+            ( 1.0,-1.0,-1.0, 1.0),
+            ( 1.0,-1.0, 1.0, 1.0),
+            (-1.0,-1.0, 1.0, 1.0),
+            # right
+            ( 1.0,-1.0,-1.0, 1.0),
+            ( 1.0, 1.0,-1.0, 1.0),
+            ( 1.0, 1.0, 1.0, 1.0),
+            ( 1.0,-1.0, 1.0, 1.0),
+            # left
+            (-1.0,-1.0,-1.0, 1.0),
+            (-1.0, 1.0,-1.0, 1.0),
+            (-1.0, 1.0, 1.0, 1.0),
+            (-1.0,-1.0, 1.0, 1.0),
+            # front
+            (-1.0,-1.0, 1.0, 1.0),
+            ( 1.0,-1.0, 1.0, 1.0),
+            ( 1.0, 1.0, 1.0, 1.0),
+            (-1.0, 1.0, 1.0, 1.0),
+            # back
+            (-1.0,-1.0,-1.0, 1.0),
+            ( 1.0,-1.0,-1.0, 1.0),
+            ( 1.0, 1.0,-1.0, 1.0),
+            (-1.0, 1.0,-1.0, 1.0),
         ]
         posBuffer = BufferHelper.sendToGPU('position', position, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders('position')
 
         # normals
-        normal = np.zeros(8, [('normal', np.float32, 3)])
-        normal['normal'] = [x[:3] for x in position['position']]
+        normal = np.zeros(24, [('normal', np.float32, 3)])
+        normal['normal'] = [
+            (0, 1, 0),
+        ] * 4 + [
+            (0,-1, 0),
+        ] * 4 + [
+            (1, 0 ,0),
+        ] * 4 + [
+            (-1,0, 0),
+        ] * 4 + [
+            (0, 0, 1),
+        ] * 4 + [
+            (0, 0,-1),
+        ] * 4
         BufferHelper.sendToGPU('normal', normal, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders('normal')
         
-
         # colors for positions
-        color = np.zeros(8, [('color', np.float32, 4)])
-        color['color'] = [Global.SOLID_COLOR for x in position]
+        color = np.zeros(24, [('color', np.float32, 4)])
+        color['color'] = [Global.SOLID_COLOR for i in range(24)]
         colorBuffer = BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)
 
         # wire colors
-        wireColor = np.zeros(8, [('wireColor', np.float32, 4)])
-        wireColor['wireColor'] = [Global.WIREFRAME_COLOR for i in range(8)]
+        wireColor = np.zeros(24, [('wireColor', np.float32, 4)])
+        wireColor['wireColor'] = [Global.WIREFRAME_COLOR for i in range(24)]
         wireColorBuffer = BufferHelper.sendToGPU('wireColor', wireColor, gl.GL_DYNAMIC_DRAW)
 
         # set up indices for drawing
-        indices = np.zeros(4*6, [('indices', np.int32, 1)])
-        indices['indices'] = [
-            0,1,2,3, #back
-            4,5,6,7, #front
-            2,3,7,6, #right
-            0,1,5,4, #left
-            0,3,7,4, #bottom
-            1,2,6,5, #top
-        ]        
+        indices = np.zeros(24, [('indices', np.int32, 1)])
+        indices['indices'] = range(24)
         self.ind_buffer = vbo.VBO(indices, target=gl.GL_ELEMENT_ARRAY_BUFFER)
         self.ind_buffer.bind()
 
@@ -430,3 +457,4 @@ class Obj(Object):
         if self.wireframe_on:
             BufferHelper.sendToShaders('wireframeColor', 'color')
             gl.glMultiDrawArrays(gl.GL_LINE_LOOP, self.faces_v_start, self.faces_v_num, self.faces_len)
+
