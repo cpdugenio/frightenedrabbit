@@ -107,11 +107,6 @@ class UVObject(Object):
         BufferHelper.sendToGPU('position', position, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders('position')
 
-        normal = np.zeros(self.maxU * self.maxV * 4, [('normal', np.float32, 4)])
-        normal['normal'] = [(x[0], x[1], x[2], 0.0) for x in point]
-        BufferHelper.sendToGPU('normal', normal, gl.GL_DYNAMIC_DRAW)
-        BufferHelper.sendToShaders('normal')        
-
         color = np.zeros(self.maxU * self.maxV * 4, [('color', np.float32, 4)])
         color['color'] = [Global.SOLID_COLOR for i in range(len(position))]
         BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)

@@ -4,7 +4,6 @@ uniform mat4 model;
 
 attribute vec4 color;
 attribute vec4 position;
-attribute vec3 normal;
 
 varying vec4 v_color;
 varying vec3 f_normal;
@@ -23,11 +22,7 @@ void main()
     realposition.z = V / 2.0 * sin( U / 2.0);
     realposition.w = 1.0;
 
-    if(position.w == 1.0){
-        gl_Position = projection * view * model * realposition;
-    } else {
-        gl_Position = projection * view * model * (realposition + vec4(normal, 1.0));
-    }
+    gl_Position = projection * view * model * realposition;
 
     v_color = color;
     f_normal = vec3(0,0,0);
