@@ -67,12 +67,13 @@ class QTMainWindow(QtGui.QWidget):
         
         self.setLayout(grid) 
         
-        self.setGeometry(0,0,1000,700)
+        self.setGeometry(0,0,Global.WIDTH,Global.HEIGHT)
 
 
     def resetUI(self, text = 'Box'):
         self.GLWidget.resetRotation()
         self.scaleSlider.setSliderPosition(10)
+        self.sidebar.render_group_default.setChecked(True)
 
         if self.sidebar.color_checkbox.checkState() == Qt.Checked:
             if not Global.COLOR_DEFAULT:
@@ -123,8 +124,8 @@ class QTSideBar(QtGui.QWidget):
         self.models_label = QtGui.QLabel('Render Model: ')
         self.models_combo.addItem("Box")
         self.models_combo.addItem("UVSphere")
-        self.models_combo.addItem("UVMobius")
-        self.models_combo.addItem("UVKleinBottle")
+#        self.models_combo.addItem("UVMobius")
+#        self.models_combo.addItem("UVKleinBottle")
         self.models_combo.addItem("UVTorus")
         for model in os.listdir(Global.MODELS_LOC):
             self.models_combo.addItem(Global.MODELS_LOC + model)
@@ -145,6 +146,21 @@ class QTSideBar(QtGui.QWidget):
         self.color_checkbox.stateChanged[int].connect(self.glwidget.toggleColor)
         self.wireframe_checkbox.stateChanged[int].connect(self.glwidget.toggleWireframe)
 
+        # create group box for render types
+        self.render_group = QtGui.QGroupBox()
+        vbox = QtGui.QVBoxLayout()
+        render_buttons = [
+            (QtGui.QRadioButton('Normals Shading'), self.glwidget.setNormalsShading),
+            (QtGui.QRadioButton('Z-Buffer Shading'), self.glwidget.setZBufferShading),
+        ]
+        if len(render_buttons) > 0:
+            render_buttons[0][0].setChecked(True)
+            self.render_group_default = render_buttons[0][0]
+        for button, event in render_buttons:
+            vbox.addWidget(button)
+            button.toggled[bool].connect(event)
+        self.render_group.setLayout(vbox)
+
         # create morph widget for object specific qt attributes
         self.morphWidget = QTMorphWidget()
 
@@ -160,7 +176,9 @@ class QTSideBar(QtGui.QWidget):
         grid.addWidget(self.color_label, 3, 1)
         grid.addWidget(self.color_checkbox, 3, 2, alignment=Qt.AlignCenter)
 
-        grid.addWidget(self.morphWidget, 4, 1, 7, 2)
+        grid.addWidget(self.render_group, 4, 1, len(render_buttons), 2)
+
+        grid.addWidget(self.morphWidget, 4+len(render_buttons), 1, 7, 2)
 
 
 

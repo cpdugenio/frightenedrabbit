@@ -5,8 +5,10 @@ uniform mat4 model;
 attribute vec4 color;
 attribute vec4 position;
 
-varying vec4 v_color;
+varying vec4 f_color;
 varying vec3 f_normal;
+varying vec4 f_pos;
+
 
 void main()
 {
@@ -25,6 +27,7 @@ void main()
     gl_Position = projection * view * model * realposition;
 
 
-    v_color = color;
+    f_color = color;
     f_normal = realposition.xyz;
+    f_pos = gl_Position;
 }

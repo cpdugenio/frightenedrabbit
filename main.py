@@ -190,6 +190,12 @@ class GLUTDisplay(object):
     def toggleColor(self):
         self.render_obj.toggleColor()
 
+    def setNormalsShading(self, bool):
+        self.render_obj.setNormalsShading(bool)
+
+    def setZBufferShading(self, bool):
+        self.render_obj.setZbufferShading(bool)
+
     def setModel(self, text):
         switch = {
             'Box' : Box,
@@ -218,6 +224,7 @@ class QTDisplay(QGLWidget, GLUTDisplay):
 
         # turn on multisampling
         format = self.format()
+        format.setSamples(128)
         format.setSampleBuffers(True)
         self.setFormat(format)
 

@@ -28,6 +28,11 @@ class Object(object):
         self.wireframe_on = Global.WIREFRAME_DEFAULT
         self.color_on = Global.COLOR_DEFAULT
         self.buildShaders()
+        
+        self.setNormalsShading(True)
+        self.setZbufferShading(False)
+
+        BufferHelper.sendUniformToShaders('eye', Global.EYE, '3f')
 
     def draw(self):
         raise NotImplementedError
@@ -46,6 +51,22 @@ class Object(object):
 
     def testFunction(self, value):
         print value
+
+    def setNormalsShading(self, bool):
+        if bool:
+            send = 1
+        else:
+            send = 0
+            
+        BufferHelper.sendUniformToShaders('normalsShading', [bool], '1i')
+
+    def setZbufferShading(self, bool):
+        if bool:
+            send = 1
+        else:
+            send = 0
+    
+        BufferHelper.sendUniformToShaders('zbufferShading', [bool], '1i')
 
     def setLayoutAttr(self, layout):
         """
@@ -140,6 +161,8 @@ class UVObject(Object):
     def draw(self):
         if self.color_on:
             # make sure polygons draw under wireframe
+            BufferHelper.sendUniformToShaders('wireframe', [0], '1i')
+
             gl.glPolygonOffset(5, 0);
             gl.glEnable(gl.GL_POLYGON_OFFSET_FILL);
 
@@ -150,6 +173,8 @@ class UVObject(Object):
 
 
         if self.wireframe_on:
+            BufferHelper.sendUniformToShaders('wireframe', [1], '1i')
+
             BufferHelper.sendToShaders('wireframeColor', 'color')
             gl.glMultiDrawArrays(gl.GL_LINE_LOOP, self.faces_v_start, self.faces_v_num, self.faces_len)
 
@@ -289,17 +314,17 @@ class Box(Object):
         # normals
         normal = np.zeros(24, [('normal', np.float32, 3)])
         normal['normal'] = [
-            (0, 1, 0),
+            (0, 1.0, 0),
         ] * 4 + [
-            (0,-1, 0),
+            (0,-1.0, 0),
         ] * 4 + [
-            (1, 0 ,0),
+            (1.0, 0 ,0),
         ] * 4 + [
-            (-1,0, 0),
+            (-1.0,0, 0),
         ] * 4 + [
-            (0, 0, 1),
+            (0, 0, 1.0),
         ] * 4 + [
-            (0, 0,-1),
+            (0, 0,-1.0),
         ] * 4
         BufferHelper.sendToGPU('normal', normal, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders('normal')
@@ -326,17 +351,19 @@ class Box(Object):
         """
         if self.color_on:
             # make sure polygons draw under wireframe
-            gl.glPolygonOffset(2.5, 0);
-            gl.glEnable(gl.GL_POLYGON_OFFSET_FILL);
+#            gl.glPolygonOffset(2.5, 0);
+#            gl.glEnable(gl.GL_POLYGON_OFFSET_FILL);
+            BufferHelper.sendUniformToShaders('wireframe', [0], '1i')
 
             BufferHelper.sendToShaders('color', 'color')
             for i in range(6): # draw each side
                 gl.glDrawElements(gl.GL_TRIANGLE_FAN, 4, gl.GL_UNSIGNED_INT, self.ind_buffer+4*4*i)
 
-            gl.glDisable(gl.GL_POLYGON_OFFSET_FILL);
+#            gl.glDisable(gl.GL_POLYGON_OFFSET_FILL);
 
 
         if self.wireframe_on:
+            BufferHelper.sendUniformToShaders('wireframe', [1], '1i')
             BufferHelper.sendToShaders('wireColor', 'color')
             for i in range(6):
                 gl.glDrawElements(gl.GL_LINE_LOOP, 4, gl.GL_UNSIGNED_INT, self.ind_buffer+4*4*i)
@@ -441,6 +468,7 @@ class Obj(Object):
 
         if self.color_on:
             # make sure polygons draw under wireframe
+            BufferHelper.sendUniformToShaders('wireframe', [0], '1i')
             gl.glPolygonOffset(2.5, 0);
             gl.glEnable(gl.GL_POLYGON_OFFSET_FILL);
             
@@ -450,6 +478,7 @@ class Obj(Object):
             gl.glDisable(gl.GL_POLYGON_OFFSET_FILL);
 
         if self.wireframe_on:
+            BufferHelper.sendUniformToShaders('wireframe', [1], '1i')
             BufferHelper.sendToShaders('wireframeColor', 'color')
             gl.glMultiDrawArrays(gl.GL_LINE_LOOP, self.faces_v_start, self.faces_v_num, self.faces_len)
 

@@ -7,8 +7,10 @@ uniform float r;
 attribute vec4 color;
 attribute vec4 position;
 
-varying vec4 v_color;
+varying vec4 f_color;
 varying vec3 f_normal;
+varying vec4 f_pos;
+
 
 void main()
 {
@@ -29,11 +31,12 @@ void main()
     gl_Position = projection * view * model * realposition;
 
 
-    v_color = color;
+    f_color = color;
 
     // calculate normal
     vec3 T = vec3(-sin(V), cos(V), 0.0);
     vec3 S = vec3(-cos(V)*sin(U), -sin(V)*sin(U), cos(U));
     vec3 N = cross(T,S);
     f_normal = normalize(N);
+    f_pos = gl_Position;
 }
