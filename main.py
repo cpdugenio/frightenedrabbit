@@ -62,8 +62,11 @@ class GLUTDisplay(object):
         self.render_obj = default_obj()
 
     def glutMouseMoveEvent(self, x, y):
-        self.rotationMatrix *= Transform.yrotate((self.xorigpos - x) * -0.01)
-        self.rotationMatrix *= Transform.xrotate((self.yorigpos - y) * -0.01)
+        if hasattr(self, 'ctrlDown') and self.ctrlDown:
+            self.translationMatrix *= Transform.translate((self.xorigpos - x) * -0.01, (self.yorigpos - y) * 0.01, 0)
+        else:
+            self.rotationMatrix *= Transform.yrotate((self.xorigpos - x) * -0.01)
+            self.rotationMatrix *= Transform.xrotate((self.yorigpos - y) * -0.01)
 
         self.xorigpos, self.yorigpos = x, y
 
@@ -143,6 +146,7 @@ class GLUTDisplay(object):
         self.scale = 1.0
 
         self.rotationMatrix = np.matrix(np.identity(4, dtype=np.float32))
+        self.translationMatrix = np.matrix(np.identity(4, dtype=np.float32))
 
     def prepTransformation(self):
         """
@@ -165,7 +169,7 @@ class GLUTDisplay(object):
         model_mat *= self.rotationMatrix
 
         # transform
-        model_mat *= Transform.translate(0,0,-25)
+        model_mat *= self.translationMatrix
         BufferHelper.sendUniformToShaders('model', model_mat, 'm4')
 
     def run(self):
@@ -184,6 +188,9 @@ class GLUTDisplay(object):
     def resetRotation(self):
         self.rotationMatrix = np.matrix(np.identity(4, dtype=np.float32))
 
+    def resetTranslation(self):
+        self.translationMatrix = np.matrix(np.identity(4, dtype=np.float32))
+
     def toggleWireframe(self):
         self.render_obj.toggleWireframe()
 
@@ -195,6 +202,9 @@ class GLUTDisplay(object):
 
     def setZBufferShading(self, bool):
         self.render_obj.setZbufferShading(bool)
+
+    def setLightsShading(self, bool):
+        self.render_obj.setLightsShading(bool)
 
     def setModel(self, text):
         switch = {
@@ -234,6 +244,14 @@ class QTDisplay(QGLWidget, GLUTDisplay):
     def mousePressEvent(self, event):
         self.glutMousePressEvent(None, None, event.pos().x(), event.pos().y())
 
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Control:
+            self.ctrlDown = True
+
+    def keyReleaseEvent(self, event):
+        if event.key() == Qt.Key_Control:
+            self.ctrlDown = False
+
     def paintGL(self):
         """
         `paintGL` is called when drawing to the widget is necessary.
@@ -254,6 +272,8 @@ class QTDisplay(QGLWidget, GLUTDisplay):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.paintGL)
         self.timer.start(Global.REFRESH_TIMER)
+
+        self.setFocusPolicy(Qt.ClickFocus)
 
     def resizeGL(self, width, height):
         """

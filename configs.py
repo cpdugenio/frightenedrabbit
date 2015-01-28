@@ -36,9 +36,18 @@ class Global(object):
     ZFAR = 2000.
 
     # for camera transform
-    EYE = (0,0,0)
+    EYE = (0,0,25)
     LOOKAT = (0,0,-15.)
     UP = (0.,1.,0.)
+
+    LIGHTS = [
+        # (ambient, diffuse, specular, position)
+        ((0,0,.15,1), (0.1,0.3,1.0,1), (1,1,1,1), (0,0,40,1)),
+        ((0,.15,0,1), (0.2,.4,.1,1), (1,1,1,1), (0,40,0,1)),
+        ((.25,0,0,1), (0.4,.2,.1,1), (1,1,1,1), (-40,0,0,1)),
+        ((0,0,0,1), (.7,.7,.7,1), (1,1,1,1), (0,-15,-100,1)),
+        ((0,0,0,1), (1,1,1,1), (1,1,1,1), (0,15,-100,1)),
+    ]
 
     # default shaders
     VERTEX_SHADER_LOC = 'shaders/basic.vert'
@@ -46,4 +55,4 @@ class Global(object):
 
     CLEAR_COLOR = (.05, .05, .05, 1.)
     WIREFRAME_COLOR = (1,1,1,1)
-    SOLID_COLOR = (1,.6,0,1)
+    SOLID_COLOR = (0,0,0,1)

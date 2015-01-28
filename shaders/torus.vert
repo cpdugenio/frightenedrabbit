@@ -28,15 +28,19 @@ void main()
     realposition.z = r * sin(U);
     realposition.w = 1.0;
 
+    // find model position
     gl_Position = projection * view * model * realposition;
 
-
+    // vary the color
     f_color = color;
 
-    // calculate normal
+    // calculate normal (in model transf)
     vec3 T = vec3(-sin(V), cos(V), 0.0);
     vec3 S = vec3(-cos(V)*sin(U), -sin(V)*sin(U), cos(U));
     vec3 N = cross(T,S);
-    f_normal = normalize(N);
+    f_normal = vec3(projection * view * model * vec4(N,0.0));
+    f_normal = normalize(f_normal);
+ 
+    // send pos to frag
     f_pos = gl_Position;
 }

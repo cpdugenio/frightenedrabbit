@@ -5,6 +5,7 @@ import numpy as np
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
 import OpenGL.GLUT as glut
+from OpenGL.constants import GLfloat_4
 
 from OpenGL import arrays
 from OpenGL.arrays import vbo
@@ -28,8 +29,12 @@ class Object(object):
         self.wireframe_on = Global.WIREFRAME_DEFAULT
         self.color_on = Global.COLOR_DEFAULT
         self.buildShaders()
-        
-        self.setNormalsShading(True)
+
+        self.setupLights()
+
+        self.lights_on = False
+        self.setLightsShading(True)
+        self.setNormalsShading(False)
         self.setZbufferShading(False)
 
         BufferHelper.sendUniformToShaders('eye', Global.EYE, '3f')
@@ -53,27 +58,36 @@ class Object(object):
         print value
 
     def setNormalsShading(self, bool):
-        if bool:
-            send = 1
-        else:
-            send = 0
-            
         BufferHelper.sendUniformToShaders('normalsShading', [bool], '1i')
 
     def setZbufferShading(self, bool):
-        if bool:
-            send = 1
-        else:
-            send = 0
-    
         BufferHelper.sendUniformToShaders('zbufferShading', [bool], '1i')
+
+    def setLightsShading(self, bool):
+        self.light_on = bool
+        if bool:
+            BufferHelper.sendUniformToShaders('activeLights', [self.activeLights], '1i')
+        else:
+            BufferHelper.sendUniformToShaders('activeLights', [0], '1i')
+
+    def setupLights(self):
+        self.lights = [[GLfloat_4(*attr) for attr in light] for light in Global.LIGHTS]
+    
+        for i, light in enumerate(self.lights):
+            amb, diff, spec, pos = light
+            light = eval("gl.GL_LIGHT%d" % i)
+            gl.glLightfv(light, gl.GL_AMBIENT, amb)
+            gl.glLightfv(light, gl.GL_DIFFUSE, diff)
+            gl.glLightfv(light, gl.GL_SPECULAR, spec)
+            gl.glLightfv(light, gl.GL_POSITION, pos)
+
+        self.activeLights = len(self.lights)
 
     def setLayoutAttr(self, layout):
         """
         Return (current row nums, current max colspan)
         """
         return (0,0)
-        
 
     def getWidget(self):
         widget = QtGui.QWidget()
@@ -170,7 +184,6 @@ class UVObject(Object):
             gl.glMultiDrawArrays(gl.GL_TRIANGLE_FAN, self.faces_v_start, self.faces_v_num, self.faces_len)
 
             gl.glDisable(gl.GL_POLYGON_OFFSET_FILL);
-
 
         if self.wireframe_on:
             BufferHelper.sendUniformToShaders('wireframe', [1], '1i')
@@ -360,7 +373,6 @@ class Box(Object):
                 gl.glDrawElements(gl.GL_TRIANGLE_FAN, 4, gl.GL_UNSIGNED_INT, self.ind_buffer+4*4*i)
 
 #            gl.glDisable(gl.GL_POLYGON_OFFSET_FILL);
-
 
         if self.wireframe_on:
             BufferHelper.sendUniformToShaders('wireframe', [1], '1i')

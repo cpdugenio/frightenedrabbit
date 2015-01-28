@@ -72,6 +72,7 @@ class QTMainWindow(QtGui.QWidget):
 
     def resetUI(self, text = 'Box'):
         self.GLWidget.resetRotation()
+        self.GLWidget.resetTranslation()
         self.scaleSlider.setSliderPosition(10)
         self.sidebar.render_group_default.setChecked(True)
 
@@ -150,6 +151,7 @@ class QTSideBar(QtGui.QWidget):
         self.render_group = QtGui.QGroupBox()
         vbox = QtGui.QVBoxLayout()
         render_buttons = [
+            (QtGui.QRadioButton('Smooth Shading'), self.glwidget.setLightsShading),
             (QtGui.QRadioButton('Normals Shading'), self.glwidget.setNormalsShading),
             (QtGui.QRadioButton('Z-Buffer Shading'), self.glwidget.setZBufferShading),
         ]
