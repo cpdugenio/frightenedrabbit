@@ -75,17 +75,17 @@ class Object(object):
             BufferHelper.sendUniformToShaders('activeLights', [0], '1i')
 
     def setupLights(self):
-        self.lights = [[GLfloat_4(*attr) for attr in light] for light in Global.LIGHTS]
+        lights = [[GLfloat_4(*attr) for attr in light] for light in Global.LIGHTS]
     
-        for i, light in enumerate(self.lights):
+        for i, light in enumerate(lights):
             amb, diff, spec, pos = light
             light = eval("gl.GL_LIGHT%d" % i)
             gl.glLightfv(light, gl.GL_AMBIENT, amb)
             gl.glLightfv(light, gl.GL_DIFFUSE, diff)
             gl.glLightfv(light, gl.GL_SPECULAR, spec)
             gl.glLightfv(light, gl.GL_POSITION, pos)
-
-        self.activeLights = len(self.lights)
+            
+        self.activeLights = len(lights)
 
     def setLayoutAttr(self, layout):
         """
@@ -469,12 +469,12 @@ class Obj(Object):
         # clean up vertices
         vertices_all = [] # vertex buffer
         for line in vertices_lines:
-            vertices_all.append( tuple([float(x) for x in line.split()[1:] + [1.0]]) )
+            vertices_all.append( [float(x) for x in line.split()[1:] + [1.0]] )
 
         # clean up vertices normals
         normals_all = [] # normal buffer
         for line in normals_lines:
-            normals_all.append( tuple([float(x) for x in line.split()[1:]]) )
+            normals_all.append( [float(x) for x in line.split()[1:]] )
 
         # clean up faces
         faces_v_num = [] # number of vertices to make face
@@ -486,9 +486,11 @@ class Obj(Object):
             v_num = 0
             for v in [int(x.split('//')[0])-1 for x in line.split()[1:]]:
                 faces_ordered.append(vertices_all[v])
-                v_num += 1
+                faces_ordered.append(vertices_all[v][:-1] + [0.0])
+                v_num += 2
             if len(normals_all):
                 for v in [int(x.split('//')[1])-1 for x in line.split()[1:]]:
+                    normals_ordered.append(normals_all[v])
                     normals_ordered.append(normals_all[v])
             faces_v_num.append(v_num)
 
@@ -497,7 +499,9 @@ class Obj(Object):
         acc.insert(0,0) # begin at zero index
         self.faces_v_start = np.cumsum(acc) # start of corresponding face
         self.faces_len = len(faces_v_num)
-        
+
+        self.faces_ordered = faces_ordered
+
         # send ordered normals to GPU
         normal = np.zeros(len(faces_ordered), [('normal', np.float32, 3)])
         if len(normals_ordered):
@@ -546,3 +550,10 @@ class Obj(Object):
             BufferHelper.sendToShaders('wireframeColor', 'color')
             gl.glMultiDrawArrays(gl.GL_LINE_LOOP, self.faces_v_start, self.faces_v_num, self.faces_len)
 
+        if self.normals_on:
+            BufferHelper.sendUniformToShaders('wireframe', [1], '1i')
+            BufferHelper.sendToShaders('wireframeColor', 'color')
+
+            BufferHelper.sendUniformToShaders('drawNormals', [1], '1i')
+            gl.glMultiDrawArrays(gl.GL_LINES, [0], [len(self.faces_ordered)], 1)
+            BufferHelper.sendUniformToShaders('drawNormals', [0], '1i')

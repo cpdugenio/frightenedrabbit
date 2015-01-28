@@ -24,7 +24,10 @@ I am also trying my best to comment methods and classes with [Numpy](https://git
 ### UV Gui
 ![GUI](https://raw.githubusercontent.com/cpdugenio/frightenedrabbit/master/screenshots/GUI.png)
 
-### Cow, Lighting
+### Cow, Normal Vectors
+![Cow with normal vectors](https://raw.githubusercontent.com/cpdugenio/frightenedrabbit/master/screenshots/Cow_Normals.png)
+
+### Cow, Smooth Shading
 ![Cow with normals shader](https://raw.githubusercontent.com/cpdugenio/frightenedrabbit/master/screenshots/Cow_Lights_Shader.png)
 
 ### Bunny, Z-Buffer Shader
