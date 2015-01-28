@@ -18,3 +18,13 @@ I also had to put `export PYTHONPATH=/usr/local/lib/python2.7/site-packages:$PYT
 
 
 I am also trying my best to comment methods and classes with [Numpy](https://github.com/numpy/numpydoc)'s doc style (just for good coding commenting practice).
+
+## Screenshots
+
+![GUI](https://raw.githubusercontent.com/cpdugenio/frightenedrabbit/master/screenshots/GUI.png)
+
+![Cow with normals shader](https://raw.githubusercontent.com/cpdugenio/frightenedrabbit/master/screenshots/Cow_Normals_Shader.png)
+
+![Bunny with z-buffer shader](https://raw.githubusercontent.com/cpdugenio/frightenedrabbit/master/screenshots/Bunny_ZDepth_Shader.png)
+
+![Bunny with normals shader](https://raw.githubusercontent.com/cpdugenio/frightenedrabbit/master/screenshots/Bunny_Normals_Shader.png)
