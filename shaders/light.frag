@@ -6,6 +6,7 @@ uniform int normalsShading;
 uniform int zbufferShading;
 uniform int activeLights;
 uniform int wireframe;
+
 uniform vec3 eye;
 
 varying vec4 f_color;

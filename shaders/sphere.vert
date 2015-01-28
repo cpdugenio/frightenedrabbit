@@ -2,6 +2,8 @@ uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
 
+uniform int drawNormals;
+
 attribute vec4 color;
 attribute vec4 position;
 
@@ -24,16 +26,25 @@ void main()
     realposition.z = cos(phi);
     realposition.w = 1.0;
 
+    // compute normal in model world
+    f_normal = realposition.xyz;
+
     // find model position
-    gl_Position = projection * view * model * realposition;
+    if(drawNormals == 1 && position.w == 0.0){
+        gl_Position = projection * view * model * (realposition + 0.25 * vec4(f_normal, 0));
+    } else {
+        gl_Position = projection * view * model * realposition;
+    }
+
+    // put normal in world transf
+    f_normal = vec3(projection * view * model * vec4(f_normal,0.0));
+    f_normal = normalize(f_normal);
+
+
 
     // vary the color across vertices
     f_color = color;
 
-    // compute normal (in model transf)
-    f_normal = realposition.xyz;
-    f_normal = vec3(projection * view * model * vec4(f_normal,0.0));
-    f_normal = normalize(f_normal);
 
     // send pos to frag
     f_pos = gl_Position;

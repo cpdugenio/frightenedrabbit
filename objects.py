@@ -28,6 +28,7 @@ class Object(object):
     def __init__(self):
         self.wireframe_on = Global.WIREFRAME_DEFAULT
         self.color_on = Global.COLOR_DEFAULT
+        self.normals_on = Global.NORMALS_DEFAULT
         self.buildShaders()
 
         self.setupLights()
@@ -47,6 +48,9 @@ class Object(object):
 
     def toggleColor(self):
         self.color_on = not self.color_on
+
+    def toggleNormals(self):
+        self.normals_on = not self.normals_on
 
     def refreshUV(self):
         pass
@@ -124,32 +128,40 @@ class UVObject(Object):
         self.maxU, self.maxV = self.U, self.V
         point = []
         self.faces_v_num = []
+        self.faces_v_normals_num = []
         for u in range(self.maxU):
             for v in range(self.maxV):
-                point.append((u/(self.maxU),v/(self.maxV),0,1.0))
-                point.append((u/(self.maxU),(v+1)/(self.maxV),0,1.0))
-                point.append(((u+1)/(self.maxU),(v+1)/(self.maxV),0,1.0))
-                point.append(((u+1)/(self.maxU),v/(self.maxV),0,1.0))
-                self.faces_v_num.append(4)
+                uvs = [
+                    (u/(self.maxU),v/(self.maxV),0,1.0),
+                    (u/(self.maxU),v/(self.maxV),0,0.0),
+                    (u/(self.maxU),(v+1)/(self.maxV),0,1.0),
+                    (u/(self.maxU),(v+1)/(self.maxV),0,0.0),
+                    ((u+1)/(self.maxU),(v+1)/(self.maxV),0,1.0),
+                    ((u+1)/(self.maxU),(v+1)/(self.maxV),0,0.0),
+                    ((u+1)/(self.maxU),v/(self.maxV),0,1.0),
+                    ((u+1)/(self.maxU),v/(self.maxV),0,0.0),
+                ]
+                point.extend(uvs)
+                self.faces_v_num.append(8)
+                self.faces_v_normals_num.append(2)
 
         acc = self.faces_v_num[::]
         acc.insert(0,0)
         self.faces_v_start = np.cumsum(acc)
         self.faces_len = len(self.faces_v_num)
 
-        position = np.zeros(self.maxU * self.maxV * 4, [('position', np.float32, 4)])
+        position = np.zeros(len(point), [('position', np.float32, 4)])
         position['position'] = point
         BufferHelper.sendToGPU('position', position, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders('position')
 
-        color = np.zeros(self.maxU * self.maxV * 4, [('color', np.float32, 4)])
+        color = np.zeros(len(point), [('color', np.float32, 4)])
         color['color'] = [Global.SOLID_COLOR for i in range(len(position))]
         BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)
 
-        wireframecolor = np.zeros(self.maxU * self.maxV * 4, [('wireframeColor', np.float32, 4)])
+        wireframecolor = np.zeros(len(point), [('wireframeColor', np.float32, 4)])
         wireframecolor['wireframeColor'] = [Global.WIREFRAME_COLOR for x in position]
         BufferHelper.sendToGPU('wireframeColor', wireframecolor, gl.GL_DYNAMIC_DRAW)
-
 
     def setLayoutAttr(self, layout):
         """
@@ -190,6 +202,14 @@ class UVObject(Object):
 
             BufferHelper.sendToShaders('wireframeColor', 'color')
             gl.glMultiDrawArrays(gl.GL_LINE_LOOP, self.faces_v_start, self.faces_v_num, self.faces_len)
+
+        if self.normals_on:
+            BufferHelper.sendUniformToShaders('wireframe', [1], '1i')
+            BufferHelper.sendToShaders('wireframeColor', 'color')
+
+            BufferHelper.sendUniformToShaders('drawNormals', [1], '1i')
+            gl.glMultiDrawArrays(gl.GL_LINES, self.faces_v_start, self.faces_v_normals_num, self.faces_len)
+            BufferHelper.sendUniformToShaders('drawNormals', [0], '1i')
 
 
 class UVSphere(UVObject):
@@ -288,73 +308,97 @@ class Box(Object):
         super(Box, self).__init__()
 
         # positions
-        position = np.zeros(24, [('position', np.float32, 4)])
+        position = np.zeros(24*2, [('position', np.float32, 4)])
         position['position'] = [
             # top
             (-1.0, 1.0,-1.0, 1.0),
+            (-1.0, 1.0,-1.0,  0.0),
             ( 1.0, 1.0,-1.0, 1.0),
+            ( 1.0, 1.0,-1.0,  0.0),
             ( 1.0, 1.0, 1.0, 1.0),
+            ( 1.0, 1.0, 1.0,  0.0),
             (-1.0, 1.0, 1.0, 1.0),
+            (-1.0, 1.0, 1.0,  0.0),
             # bottom
             (-1.0,-1.0,-1.0, 1.0),
+            (-1.0,-1.0,-1.0,  0.0),
             ( 1.0,-1.0,-1.0, 1.0),
+            ( 1.0,-1.0,-1.0,  0.0),
             ( 1.0,-1.0, 1.0, 1.0),
+            ( 1.0,-1.0, 1.0,  0.0),
             (-1.0,-1.0, 1.0, 1.0),
+            (-1.0,-1.0, 1.0,  0.0),
             # right
             ( 1.0,-1.0,-1.0, 1.0),
+            ( 1.0,-1.0,-1.0,  0.0),
             ( 1.0, 1.0,-1.0, 1.0),
+            ( 1.0, 1.0,-1.0,  0.0),
             ( 1.0, 1.0, 1.0, 1.0),
+            ( 1.0, 1.0, 1.0,  0.0),
             ( 1.0,-1.0, 1.0, 1.0),
+            ( 1.0,-1.0, 1.0,  0.0),
             # left
             (-1.0,-1.0,-1.0, 1.0),
+            (-1.0,-1.0,-1.0,  0.0),
             (-1.0, 1.0,-1.0, 1.0),
+            (-1.0, 1.0,-1.0,  0.0),
             (-1.0, 1.0, 1.0, 1.0),
+            (-1.0, 1.0, 1.0,  0.0),
             (-1.0,-1.0, 1.0, 1.0),
+            (-1.0,-1.0, 1.0,  0.0),
             # front
             (-1.0,-1.0, 1.0, 1.0),
+            (-1.0,-1.0, 1.0,  0.0),
             ( 1.0,-1.0, 1.0, 1.0),
+            ( 1.0,-1.0, 1.0,  0.0),
             ( 1.0, 1.0, 1.0, 1.0),
+            ( 1.0, 1.0, 1.0,  0.0),
             (-1.0, 1.0, 1.0, 1.0),
+            (-1.0, 1.0, 1.0,  0.0),
             # back
             (-1.0,-1.0,-1.0, 1.0),
+            (-1.0,-1.0,-1.0,  0.0),
             ( 1.0,-1.0,-1.0, 1.0),
+            ( 1.0,-1.0,-1.0,  0.0),
             ( 1.0, 1.0,-1.0, 1.0),
+            ( 1.0, 1.0,-1.0,  0.0),
             (-1.0, 1.0,-1.0, 1.0),
+            (-1.0, 1.0,-1.0,  0.0),
         ]
         posBuffer = BufferHelper.sendToGPU('position', position, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders('position')
 
         # normals
-        normal = np.zeros(24, [('normal', np.float32, 3)])
+        normal = np.zeros(24*2, [('normal', np.float32, 3)])
         normal['normal'] = [
             (0, 1.0, 0),
-        ] * 4 + [
+        ] * 8 + [
             (0,-1.0, 0),
-        ] * 4 + [
+        ] * 8 + [
             (1.0, 0 ,0),
-        ] * 4 + [
+        ] * 8 + [
             (-1.0,0, 0),
-        ] * 4 + [
+        ] * 8 + [
             (0, 0, 1.0),
-        ] * 4 + [
+        ] * 8 + [
             (0, 0,-1.0),
-        ] * 4
+        ] * 8
         BufferHelper.sendToGPU('normal', normal, gl.GL_DYNAMIC_DRAW)
         BufferHelper.sendToShaders('normal')
         
         # colors for positions
-        color = np.zeros(24, [('color', np.float32, 4)])
-        color['color'] = [Global.SOLID_COLOR for i in range(24)]
+        color = np.zeros(24*2, [('color', np.float32, 4)])
+        color['color'] = [Global.SOLID_COLOR for i in range(2*24)]
         colorBuffer = BufferHelper.sendToGPU('color', color, gl.GL_DYNAMIC_DRAW)
 
         # wire colors
-        wireColor = np.zeros(24, [('wireColor', np.float32, 4)])
-        wireColor['wireColor'] = [Global.WIREFRAME_COLOR for i in range(24)]
+        wireColor = np.zeros(24*2, [('wireColor', np.float32, 4)])
+        wireColor['wireColor'] = [Global.WIREFRAME_COLOR for i in range(24*2)]
         wireColorBuffer = BufferHelper.sendToGPU('wireColor', wireColor, gl.GL_DYNAMIC_DRAW)
 
         # set up indices for drawing
-        indices = np.zeros(24, [('indices', np.int32, 1)])
-        indices['indices'] = range(24)
+        indices = np.zeros(24*2, [('indices', np.int32, 1)])
+        indices['indices'] = range(24*2)
         self.ind_buffer = vbo.VBO(indices, target=gl.GL_ELEMENT_ARRAY_BUFFER)
         self.ind_buffer.bind()
 
@@ -370,7 +414,7 @@ class Box(Object):
 
             BufferHelper.sendToShaders('color', 'color')
             for i in range(6): # draw each side
-                gl.glDrawElements(gl.GL_TRIANGLE_FAN, 4, gl.GL_UNSIGNED_INT, self.ind_buffer+4*4*i)
+                gl.glDrawElements(gl.GL_TRIANGLE_FAN, 8, gl.GL_UNSIGNED_INT, self.ind_buffer+4*8*i)
 
 #            gl.glDisable(gl.GL_POLYGON_OFFSET_FILL);
 
@@ -378,8 +422,16 @@ class Box(Object):
             BufferHelper.sendUniformToShaders('wireframe', [1], '1i')
             BufferHelper.sendToShaders('wireColor', 'color')
             for i in range(6):
-                gl.glDrawElements(gl.GL_LINE_LOOP, 4, gl.GL_UNSIGNED_INT, self.ind_buffer+4*4*i)
+                gl.glDrawElements(gl.GL_LINE_LOOP, 8, gl.GL_UNSIGNED_INT, self.ind_buffer+4*8*i)
 
+        if self.normals_on:
+            BufferHelper.sendToShaders('wireColor', 'color')
+            BufferHelper.sendUniformToShaders('wireframe', [1], '1i')
+
+            BufferHelper.sendUniformToShaders('drawNormals', [1], '1i')
+            for i in range(6):
+                gl.glDrawElements(gl.GL_LINES, 8, gl.GL_UNSIGNED_INT, self.ind_buffer+4*8*i)
+            BufferHelper.sendUniformToShaders('drawNormals', [0], '1i')
 
 class Obj(Object):
     """

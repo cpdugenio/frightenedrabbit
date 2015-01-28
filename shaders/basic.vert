@@ -2,6 +2,8 @@ uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
 
+uniform int drawNormals;
+
 attribute vec4 color;
 attribute vec4 position;
 attribute vec3 normal;
@@ -13,7 +15,11 @@ varying vec4 f_pos;
 void main()
 {
     // compute model pos
-    gl_Position = projection * view * model * position;
+    if(drawNormals == 1 && position.w == 0.0){
+        gl_Position = projection * view * model * (vec4(position.xyz, 1.0) + 0.25 * vec4(normal,0.0));
+    } else {
+        gl_Position = projection * view * model * vec4(position.xyz, 1.0);
+    }
 
     // vary color
     f_color = color;

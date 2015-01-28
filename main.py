@@ -197,6 +197,9 @@ class GLUTDisplay(object):
     def toggleColor(self):
         self.render_obj.toggleColor()
 
+    def toggleNormals(self):
+        self.render_obj.toggleNormals()
+
     def setNormalsShading(self, bool):
         self.render_obj.setNormalsShading(bool)
 

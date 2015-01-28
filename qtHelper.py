@@ -83,6 +83,13 @@ class QTMainWindow(QtGui.QWidget):
             if Global.COLOR_DEFAULT:
                 self.sidebar.color_checkbox.setCheckState(Qt.Checked)
 
+        if self.sidebar.normals_checkbox.checkState() == Qt.Checked:
+            if not Global.NORMALS_DEFAULT:
+                self.sidebar.normals_checkbox.setCheckState(Qt.Unchecked)
+        else:
+            if Global.NORMALS_DEFAULT:
+                self.sidebar.normals_checkbox.setCheckState(Qt.Checked)
+
         if self.sidebar.wireframe_checkbox.checkState() == Qt.Checked:
             if not Global.WIREFRAME_DEFAULT:
                 self.sidebar.wireframe_checkbox.setCheckState(Qt.Unchecked)
@@ -139,13 +146,20 @@ class QTSideBar(QtGui.QWidget):
         self.color_checkbox = QtGui.QCheckBox()
         self.color_label = QtGui.QLabel('Toggle Color')
 
+        # NORMALS
+        self.normals_checkbox = QtGui.QCheckBox()
+        self.normals_label = QtGui.QLabel('Toggle Normals')
+
         if Global.COLOR_DEFAULT:
             self.color_checkbox.setCheckState(Qt.Checked)
         if Global.WIREFRAME_DEFAULT:
             self.wireframe_checkbox.setCheckState(Qt.Checked)
+        if Global.NORMALS_DEFAULT:
+            self.normals_checkbox.setCheckState(Qt.Checked)
 
         self.color_checkbox.stateChanged[int].connect(self.glwidget.toggleColor)
         self.wireframe_checkbox.stateChanged[int].connect(self.glwidget.toggleWireframe)
+        self.normals_checkbox.stateChanged[int].connect(self.glwidget.toggleNormals)
 
         # create group box for render types
         self.render_group = QtGui.QGroupBox()
@@ -178,9 +192,12 @@ class QTSideBar(QtGui.QWidget):
         grid.addWidget(self.color_label, 3, 1)
         grid.addWidget(self.color_checkbox, 3, 2, alignment=Qt.AlignCenter)
 
-        grid.addWidget(self.render_group, 4, 1, len(render_buttons), 2)
+        grid.addWidget(self.normals_label, 4, 1)
+        grid.addWidget(self.normals_checkbox, 4, 2, alignment=Qt.AlignCenter)
 
-        grid.addWidget(self.morphWidget, 4+len(render_buttons), 1, 7, 2)
+        grid.addWidget(self.render_group, 5, 1, len(render_buttons), 2)
+
+        grid.addWidget(self.morphWidget, 5+len(render_buttons), 1, 7, 2)
 
 
 

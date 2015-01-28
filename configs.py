@@ -24,7 +24,8 @@ class Global(object):
 
     # UI defaults
     COLOR_DEFAULT = True
-    WIREFRAME_DEFAULT = True
+    WIREFRAME_DEFAULT = False
+    NORMALS_DEFAULT = False
 
     # for UV objects
     MAX_U = 100
