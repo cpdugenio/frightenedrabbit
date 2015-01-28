@@ -43,8 +43,8 @@ void main()
     } else if (normalsShading == 1){
         gl_FragColor = f_color + 0.5 * vec4(f_normal, 0.0);
     } else if (zbufferShading == 1){
-        float dist = 1.0 - distance(eye, f_pos.xyz) / 42.5;
-        gl_FragColor = vec4(dist*.6, dist*0.6, dist, 1.0);
+        float dist = distance(eye, f_pos.xyz) / 50.0;
+        gl_FragColor = vec4(dist, dist, dist, 1.0);
     } else {
         gl_FragColor = f_color;
     }

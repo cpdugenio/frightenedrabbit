@@ -55,4 +55,4 @@ class Global(object):
 
     CLEAR_COLOR = (.05, .05, .05, 1.)
     WIREFRAME_COLOR = (1,1,1,1)
-    SOLID_COLOR = (0,0,0,1)
+    SOLID_COLOR = (.5,.5,.5,1)

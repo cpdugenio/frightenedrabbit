@@ -21,10 +21,14 @@ I am also trying my best to comment methods and classes with [Numpy](https://git
 
 ## Screenshots
 
+### UV Gui
 ![GUI](https://raw.githubusercontent.com/cpdugenio/frightenedrabbit/master/screenshots/GUI.png)
 
-![Cow with normals shader](https://raw.githubusercontent.com/cpdugenio/frightenedrabbit/master/screenshots/Cow_Normals_Shader.png)
+### Cow, Lighting
+![Cow with normals shader](https://raw.githubusercontent.com/cpdugenio/frightenedrabbit/master/screenshots/Cow_Lights_Shader.png)
 
-![Bunny with z-buffer shader](https://raw.githubusercontent.com/cpdugenio/frightenedrabbit/master/screenshots/Bunny_ZDepth_Shader.png)
+### Bunny, Z-Buffer Shader
+![Bunny with z-buffer shader](https://raw.githubusercontent.com/cpdugenio/frightenedrabbit/master/screenshots/Bunny_ZBuffer_Shader.png)
 
+### Bunny, Wireframe + Normals Shader
 ![Bunny with normals shader](https://raw.githubusercontent.com/cpdugenio/frightenedrabbit/master/screenshots/Bunny_Normals_Shader.png)
