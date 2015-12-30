@@ -42,7 +42,7 @@ class GLUTDisplay(object):
         -----
         `self.render_obj` is initialized here, which is then being used and drawn in `self.display`
         """
-        
+
         glut.glutInit()
         glut.glutInitDisplayMode(glut.GLUT_RGBA | glut.GLUT_DOUBLE | glut.GLUT_DEPTH | glut.GLUT_MULTISAMPLE)
         glut.glutCreateWindow('Frightened Glut Rabbit')
@@ -60,6 +60,9 @@ class GLUTDisplay(object):
 
         # set object to be rendered
         self.render_obj = default_obj()
+
+        # For checking if need to swap
+        self.standalone = True
 
     def glutMouseMoveEvent(self, x, y):
         if hasattr(self, 'ctrlDown') and self.ctrlDown:
@@ -103,7 +106,9 @@ class GLUTDisplay(object):
         self.render_obj.draw()
 
         gl.glFlush()
-        glut.glutSwapBuffers()
+
+        if self.standalone:
+            glut.glutSwapBuffers()
 
     def reshape(self, width, height):
         """
@@ -134,7 +139,7 @@ class GLUTDisplay(object):
         """
         This function builds, compiles, and links the GPU program and shaders
         """
-        
+
 
         # setup for mouseclick
         self.xrotate = 0
@@ -241,6 +246,9 @@ class QTDisplay(QGLWidget, GLUTDisplay):
         format.setSampleBuffers(True)
         self.setFormat(format)
 
+        # Let QT deal with swapping buffers
+        self.standalone = False
+
     def mouseMoveEvent(self, event):
         self.glutMouseMoveEvent(event.pos().x(), event.pos().y())
 
@@ -271,7 +279,7 @@ class QTDisplay(QGLWidget, GLUTDisplay):
         self.buildProgram()
 
         self.parentWidget().resetUI()
-        
+
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.paintGL)
         self.timer.start(Global.REFRESH_TIMER)
@@ -285,7 +293,7 @@ class QTDisplay(QGLWidget, GLUTDisplay):
         """
         self.reshape(width, height)
 
-    
+
 
 
 if __name__ == '__main__':
